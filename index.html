@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPY Market Risk Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050a0f;
+    --panel: #0a1420;
+    --border: #1a2a3a;
+    --green: #00ff88;
+    --yellow: #ffd600;
+    --orange: #ff6b00;
+    --red: #ff1744;
+    --blue: #00b4ff;
+    --text: #c8dae8;
+    --muted: #4a6a7a;
+    --mono: 'Share Tech Mono', monospace;
+    --display: 'Barlow Condensed', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--display);
+    min-height: 100vh;
+    padding: 20px 24px;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(0,180,255,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(255,23,68,0.04) 0%, transparent 60%);
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .title { font-size: 32px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; color: #fff; }
+  .subtitle { font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-top: 4px; font-family: var(--mono); }
+
+  .timestamp { text-align: right; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .timestamp .time { font-size: 22px; color: var(--blue); display: block; letter-spacing: 2px; }
+
+  /* INDEX ROW */
+  .section-label {
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--muted); font-family: var(--mono); margin-bottom: 12px; padding-left: 2px;
+  }
+
+  .index-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+
+  .index-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 4px;
+    padding: 18px 22px; display: flex; justify-content: space-between; align-items: center;
+  }
+
+  .index-name { font-size: 15px; font-weight: 700; letter-spacing: 2px; color: #fff; text-transform: uppercase; }
+  .index-full { font-size: 10px; color: var(--muted); font-family: var(--mono); margin-top: 3px; }
+  .index-price { font-size: 26px; font-weight: 700; font-family: var(--mono); color: #fff; text-align: right; }
+  .index-pct { font-size: 14px; font-family: var(--mono); font-weight: 600; margin-top: 3px; text-align: right; }
+
+  .up { color: var(--green); }
+  .down { color: var(--red); }
+  .neutral { color: var(--muted); }
+
+  /* RISK HERO */
+  .risk-hero { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+
+  .score-panel, .cta-panel {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 4px; padding: 28px; position: relative; overflow: hidden;
+  }
+
+  .score-panel::before, .cta-panel::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px; background: var(--risk-color, var(--orange));
+    transition: background 0.5s;
+  }
+
+  .score-label, .cta-title {
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--muted); font-family: var(--mono); margin-bottom: 10px;
+  }
+
+  .score-number {
+    font-size: 90px; font-weight: 900; line-height: 1;
+    color: var(--risk-color, var(--orange));
+    text-shadow: 0 0 50px var(--risk-color, var(--orange));
+    letter-spacing: -4px; transition: color 0.5s, text-shadow 0.5s;
+  }
+
+  .score-level {
+    font-size: 24px; font-weight: 700; letter-spacing: 5px;
+    text-transform: uppercase; color: var(--risk-color, var(--orange));
+    margin-top: 6px; transition: color 0.5s;
+  }
+
+  .score-bar { margin-top: 20px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .score-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--green) 0%, var(--yellow) 33%, var(--orange) 66%, var(--red) 100%);
+    transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .score-pointer { position: relative; height: 14px; margin-top: 4px; }
+  .pointer-arrow {
+    position: absolute; width: 0; height: 0;
+    border-left: 6px solid transparent; border-right: 6px solid transparent;
+    border-bottom: 9px solid var(--risk-color, var(--orange));
+    transform: translateX(-50%); transition: left 1.2s cubic-bezier(0.4,0,0.2,1), border-bottom-color 0.5s;
+  }
+
+  .cta-action {
+    font-size: 30px; font-weight: 700; color: var(--risk-color, var(--orange));
+    letter-spacing: 3px; text-transform: uppercase; margin-bottom: 14px;
+    transition: color 0.5s;
+  }
+
+  .cta-bullets { list-style: none; font-size: 14px; line-height: 2; color: var(--text); }
+  .cta-bullets li::before { content: '▸ '; color: var(--risk-color, var(--orange)); }
+
+  /* INDICATORS */
+  .indicators-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+
+  .indicator-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 4px;
+    padding: 16px 18px; position: relative; overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .indicator-card:hover { border-color: var(--card-color, var(--muted)); }
+
+  .indicator-card::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+    height: 2px; background: var(--card-color, var(--muted)); opacity: 0.7;
+  }
+
+  .ind-ticker { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 2px; margin-bottom: 4px; }
+  .ind-name { font-size: 12px; color: var(--muted); margin-bottom: 10px; font-weight: 600; letter-spacing: 1px; }
+  .ind-value { font-size: 28px; font-weight: 700; color: var(--card-color, #fff); font-family: var(--mono); line-height: 1; }
+  .ind-change { font-size: 12px; font-family: var(--mono); margin-top: 4px; }
+  .ind-signal { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-top: 8px; color: var(--card-color, var(--muted)); font-weight: 700; }
+  .ind-status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--card-color, var(--muted)); margin-right: 5px; animation: pulse 2s infinite; }
+  .ind-weight { font-family: var(--mono); font-size: 9px; color: var(--muted); margin-top: 4px; }
+
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* FOOTER */
+  .footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 16px; border-top: 1px solid var(--border);
+  }
+
+  .data-note { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+
+  .refresh-btn {
+    background: transparent; border: 1px solid var(--blue); color: var(--blue);
+    font-family: var(--mono); font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    padding: 10px 28px; border-radius: 2px; cursor: pointer; transition: all 0.2s;
+  }
+
+  .refresh-btn:hover { background: var(--blue); color: var(--bg); }
+  .refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* LOADING */
+  .loading-overlay {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 100; transition: opacity 0.6s;
+  }
+  .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  .loading-title { font-size: 36px; font-weight: 900; letter-spacing: 8px; text-transform: uppercase; color: #fff; margin-bottom: 8px; }
+  .loading-sub { font-family: var(--mono); font-size: 12px; color: var(--muted); letter-spacing: 2px; margin-bottom: 36px; }
+  .loading-bar { width: 240px; height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; }
+  .loading-fill { height: 100%; background: var(--blue); border-radius: 1px; animation: load 2.5s ease-in-out forwards; }
+  @keyframes load { 0% { width: 0%; } 100% { width: 100%; } }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .indicators-grid { grid-template-columns: repeat(2, 1fr); }
+    .risk-hero { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .index-row { grid-template-columns: 1fr; }
+    .indicators-grid { grid-template-columns: 1fr 1fr; }
+    .score-number { font-size: 64px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-title">Market Risk</div>
+  <div class="loading-sub">Pulling live market data...</div>
+  <div class="loading-bar"><div class="loading-fill"></div></div>
+</div>
+
+<div class="header">
+  <div>
+    <div class="title">SPY Risk Dashboard</div>
+    <div class="subtitle">Composite Market Decline Indicator · 15min Delay · Not Financial Advice</div>
+  </div>
+  <div class="timestamp">
+    <span class="time" id="clock">--:--:--</span>
+    <span id="dateStr">—</span>
+  </div>
+</div>
+
+<div class="section-label">▸ Market Indices (Live)</div>
+<div class="index-row">
+  <div class="index-card">
+    <div><div class="index-name">SPY</div><div class="index-full">S&amp;P 500 ETF</div></div>
+    <div><div class="index-price" id="spy-price">—</div><div class="index-pct" id="spy-pct">—</div></div>
+  </div>
+  <div class="index-card">
+    <div><div class="index-name">QQQ</div><div class="index-full">Nasdaq 100 ETF</div></div>
+    <div><div class="index-price" id="qqq-price">—</div><div class="index-pct" id="qqq-pct">—</div></div>
+  </div>
+  <div class="index-card">
+    <div><div class="index-name">VIX</div><div class="index-full">Volatility Index</div></div>
+    <div><div class="index-price" id="vix-price">—</div><div class="index-pct" id="vix-pct">—</div></div>
+  </div>
+</div>
+
+<div class="risk-hero">
+  <div class="score-panel" id="scorePanel">
+    <div class="score-label">▸ Composite Risk Score</div>
+    <div class="score-number" id="scoreNum">—</div>
+    <div class="score-level" id="scoreLevel">Calculating...</div>
+    <div class="score-bar"><div class="score-fill" id="scoreFill" style="width:0%"></div></div>
+    <div class="score-pointer"><div class="pointer-arrow" id="scorePointer" style="left:0%"></div></div>
+  </div>
+  <div class="cta-panel" id="ctaPanel">
+    <div class="cta-title">▸ Today's Call to Action</div>
+    <div class="cta-action" id="ctaAction">Loading...</div>
+    <ul class="cta-bullets" id="ctaBullets"></ul>
+  </div>
+</div>
+
+<div class="section-label">▸ Risk Indicator Breakdown</div>
+<div class="indicators-grid" id="indicatorsGrid"></div>
+
+<div class="footer">
+  <div class="data-note" id="dataNote">⬤ Initializing data feed...</div>
+  <button class="refresh-btn" id="refreshBtn" onclick="loadData()">↺ Refresh Data</button>
+</div>
+
+<script>
+// ─── CLOCK ───────────────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', { hour12: false });
+  document.getElementById('dateStr').textContent = now.toLocaleDateString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+  });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ─── RISK CONFIG ─────────────────────────────────────────────────────────────
+const RISK = {
+  green:  { color: '#00ff88', label: 'LOW RISK',      action: 'STAY INVESTED',
+    bullets: ['Hold current equity positions fully', 'No hedges needed at this level', 'Dollar-cost average on schedule', 'Monitor for VIX breakout above 20'] },
+  yellow: { color: '#ffd600', label: 'ELEVATED RISK', action: 'TIGHTEN UP',
+    bullets: ['Trim 5–10% of equity exposure to cash', 'Buy small SPY put positions 90 days out', 'Raise cash buffer to 10–15%', 'Avoid new aggressive long entries'] },
+  orange: { color: '#ff6b00', label: 'HIGH RISK',     action: 'HEDGE & REDUCE',
+    bullets: ['Reduce equity exposure 20–30%', 'Rotate to XLU / XLP / XLV (defensives)', 'Buy SPY put spreads or protective collars', 'Raise cash to 30–40% — wait for signal'] },
+  red:    { color: '#ff1744', label: 'CRASH RISK',    action: 'DEFENSIVE MODE',
+    bullets: ['De-risk aggressively — 40–50% cash', 'SPY puts / SPXU / SH short positions', 'VIX calls as crash insurance (5–10x payout)', 'No new longs until score drops below 55'] }
+};
+
+function getBand(score) {
+  if (score < 26) return 'green';
+  if (score < 51) return 'yellow';
+  if (score < 76) return 'orange';
+  return 'red';
+}
+
+// ─── DATA FETCH ───────────────────────────────────────────────────────────────
+async function fetchQuote(symbol) {
+  try {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=5d`;
+    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxy, { signal: AbortSignal.timeout(9000) });
+    const json = await res.json();
+    const data = JSON.parse(json.contents);
+    const meta = data.chart.result[0].meta;
+    const price = meta.regularMarketPrice;
+    const prev  = meta.previousClose || meta.chartPreviousClose;
+    const change = price - prev;
+    const pct    = (change / prev) * 100;
+    return { price, change, pct };
+  } catch(e) { return null; }
+}
+
+// ─── SCORING COMPONENTS ───────────────────────────────────────────────────────
+function scoreVIX(price) {
+  if (!price) return { score: 20, signal: 'NO DATA',  color: '#4a6a7a' };
+  if (price < 15) return { score: 5,  signal: 'CALM',    color: '#00ff88' };
+  if (price < 20) return { score: 15, signal: 'NORMAL',  color: '#00ff88' };
+  if (price < 25) return { score: 32, signal: 'NERVOUS', color: '#ffd600' };
+  if (price < 35) return { score: 58, signal: 'FEARFUL', color: '#ff6b00' };
+  return               { score: 85, signal: 'PANIC',   color: '#ff1744' };
+}
+
+function scoreSPY(pct) {
+  if (pct === null || pct === undefined) return { score: 20, signal: 'NO DATA',   color: '#4a6a7a' };
+  if (pct >  1.0) return { score: 5,  signal: 'STRONG',    color: '#00ff88' };
+  if (pct >  0.0) return { score: 18, signal: 'POSITIVE',  color: '#ffd600' };
+  if (pct > -1.0) return { score: 38, signal: 'WEAK',      color: '#ff6b00' };
+  if (pct > -2.5) return { score: 60, signal: 'SELLING',   color: '#ff1744' };
+  return               { score: 85, signal: 'BREAKDOWN', color: '#ff1744' };
+}
+
+function scoreCAPE() {
+  // Monthly value — last known: ~38.5 (May 2026)
+  const v = 38.5;
+  return { score: 75, value: v.toFixed(1), signal: 'EXTREME', color: '#ff1744' };
+}
+
+function scoreBuffett() {
+  // Quarterly — last known: ~205% (Q1 2026)
+  const v = 205;
+  return { score: 80, value: v + '%', signal: 'EXTREME', color: '#ff1744' };
+}
+
+function scoreSpread(qqqPct, spyPct) {
+  if (!qqqPct || !spyPct) return { score: 20, signal: 'NO DATA', color: '#4a6a7a' };
+  const d = qqqPct - spyPct;
+  if (d >  0.5) return { score: 8,  signal: 'TECH LEADS',   color: '#00ff88' };
+  if (d > -0.5) return { score: 22, signal: 'NEUTRAL',      color: '#ffd600' };
+  if (d > -1.5) return { score: 45, signal: 'TECH LAGS',    color: '#ff6b00' };
+  return             { score: 68, signal: 'TECH SELLING', color: '#ff1744' };
+}
+
+function scoreMood(spyPct, vixPct) {
+  if (!spyPct && spyPct !== 0) return { score: 20, signal: 'UNKNOWN', color: '#4a6a7a' };
+  const v = spyPct - (vixPct || 0) * 0.08;
+  if (v >  1.5) return { score: 5,  signal: 'BULLISH',      color: '#00ff88' };
+  if (v >  0)   return { score: 20, signal: 'CAUTIOUS',     color: '#ffd600' };
+  if (v > -1.5) return { score: 45, signal: 'BEARISH',      color: '#ff6b00' };
+  return             { score: 75, signal: 'VERY BEARISH', color: '#ff1744' };
+}
+
+function compute(spy, qqq, vix) {
+  const c = {
+    vix:     scoreVIX(vix?.price),
+    spy:     scoreSPY(spy?.pct),
+    cape:    scoreCAPE(),
+    buffett: scoreBuffett(),
+    spread:  scoreSpread(qqq?.pct, spy?.pct),
+    mood:    scoreMood(spy?.pct, vix?.pct)
+  };
+  // Weights: CAPE 25%, Buffett 20%, VIX 20%, SPY 15%, Spread 10%, Mood 10%
+  const total = Math.round(
+    c.cape.score    * 0.25 +
+    c.buffett.score * 0.20 +
+    c.vix.score     * 0.20 +
+    c.spy.score     * 0.15 +
+    c.spread.score  * 0.10 +
+    c.mood.score    * 0.10
+  );
+  return { total, c };
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function fmt(val, decimals=2) { return val !== null && val !== undefined ? val.toFixed(decimals) : '—'; }
+function fmtPct(pct) { if (!pct && pct !== 0) return '—'; return (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%'; }
+function pctClass(pct) { if (!pct && pct !== 0) return 'neutral'; return pct >= 0 ? 'up' : 'down'; }
+
+function renderIndex(pid, ppct, data) {
+  document.getElementById(pid).textContent  = data ? fmt(data.price) : '—';
+  const el = document.getElementById(ppct);
+  el.textContent = data ? fmtPct(data.pct) : '—';
+  el.className   = 'index-pct ' + (data ? pctClass(data.pct) : 'neutral');
+}
+
+function renderScore(score) {
+  const band = getBand(score);
+  const cfg  = RISK[band];
+
+  ['scorePanel','ctaPanel'].forEach(id => {
+    document.getElementById(id).style.setProperty('--risk-color', cfg.color);
+  });
+
+  const num = document.getElementById('scoreNum');
+  num.textContent  = score;
+  num.style.color  = cfg.color;
+  num.style.textShadow = `0 0 50px ${cfg.color}`;
+
+  const lvl = document.getElementById('scoreLevel');
+  lvl.textContent = cfg.label;
+  lvl.style.color = cfg.color;
+
+  document.getElementById('scoreFill').style.width = score + '%';
+  const ptr = document.getElementById('scorePointer');
+  ptr.style.left = Math.min(score, 97) + '%';
+  ptr.style.borderBottomColor = cfg.color;
+
+  const act = document.getElementById('ctaAction');
+  act.textContent = cfg.action;
+  act.style.color = cfg.color;
+
+  document.getElementById('ctaBullets').innerHTML =
+    cfg.bullets.map(b => `<li>${b}</li>`).join('');
+}
+
+function renderCards(c, spy, qqq, vix) {
+  const cards = [
+    {
+      ticker: 'CAPE / SHILLER PE', name: 'Cyclically Adj. P/E',
+      value: c.cape.value, change: 'Hist avg: 17.3 · 2× overvalued',
+      ...c.cape, weight: '25%'
+    },
+    {
+      ticker: 'BUFFETT INDICATOR', name: 'Mkt Cap / GDP',
+      value: c.buffett.value, change: 'Danger zone above 180%',
+      ...c.buffett, weight: '20%'
+    },
+    {
+      ticker: '^VIX', name: 'Volatility / Fear Index',
+      value: vix ? fmt(vix.price) : '—',
+      change: vix ? fmtPct(vix.pct) + ' today' : 'No data',
+      ...c.vix, weight: '20%'
+    },
+    {
+      ticker: 'SPY DAILY MOVE', name: 'S&P 500 Price Action',
+      value: spy ? fmtPct(spy.pct) : '—',
+      change: spy ? '$' + fmt(spy.price) : 'No data',
+      ...c.spy, weight: '15%'
+    },
+    {
+      ticker: 'QQQ vs SPY', name: 'Tech Relative Strength',
+      value: (qqq && spy) ? fmtPct(qqq.pct - spy.pct) : '—',
+      change: 'Spread today',
+      ...c.spread, weight: '10%'
+    },
+    {
+      ticker: 'MARKET MOOD', name: 'Composite Sentiment',
+      value: c.mood.signal,
+      change: spy ? 'SPY ' + fmtPct(spy.pct) : '—',
+      ...c.mood, weight: '10%'
+    }
+  ];
+
+  document.getElementById('indicatorsGrid').innerHTML = cards.map(card => `
+    <div class="indicator-card" style="--card-color:${card.color}">
+      <div class="ind-ticker">${card.ticker}</div>
+      <div class="ind-name">${card.name}</div>
+      <div class="ind-value">${card.value}</div>
+      <div class="ind-change ${card.change.startsWith('+') ? 'up' : card.change.startsWith('-') ? 'down' : 'neutral'}">${card.change}</div>
+      <div class="ind-signal"><span class="ind-status-dot"></span>${card.signal}</div>
+      <div class="ind-weight">Score: ${card.score} · Weight: ${card.weight}</div>
+    </div>
+  `).join('');
+}
+
+// ─── MAIN LOAD ────────────────────────────────────────────────────────────────
+async function loadData() {
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  btn.textContent = '↺ Loading...';
+
+  try {
+    const [spy, qqq, vix] = await Promise.all([
+      fetchQuote('SPY'),
+      fetchQuote('QQQ'),
+      fetchQuote('%5EVIX')
+    ]);
+
+    renderIndex('spy-price', 'spy-pct', spy);
+    renderIndex('qqq-price', 'qqq-pct', qqq);
+    renderIndex('vix-price', 'vix-pct', vix);
+
+    const { total, c } = compute(spy, qqq, vix);
+    renderScore(total);
+    renderCards(c, spy, qqq, vix);
+
+    document.getElementById('dataNote').textContent =
+      `⬤ Updated: ${new Date().toLocaleTimeString()} · Yahoo Finance 15min delay · Not financial advice`;
+
+  } catch(e) {
+    document.getElementById('dataNote').textContent =
+      '⚠ Data error — check connection and refresh';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '↺ Refresh Data';
+  document.getElementById('loadingOverlay').classList.add('hidden');
+}
+
+// Auto-load after overlay
+setTimeout(loadData, 2600);
+</script>
+</body>
+</html>
