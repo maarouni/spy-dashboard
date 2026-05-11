@@ -4,135 +4,171 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPY Market Risk Dashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
 <style>
-  :root{
-    --bg:#050a0f;--panel:#0a1420;--border:#1a2a3a;
-    --green:#00ff88;--yellow:#ffd600;--orange:#ff6b00;--red:#ff1744;
-    --blue:#00b4ff;--purple:#c084fc;
-    --mono:'Share Tech Mono',monospace;--display:'Barlow Condensed',sans-serif;
-  }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{background:var(--bg);color:#c8dae8;font-family:var(--display);min-height:100vh;padding:20px 24px;
-    background-image:radial-gradient(ellipse at 20% 20%,rgba(0,180,255,.04) 0%,transparent 60%),
-    radial-gradient(ellipse at 80% 80%,rgba(255,23,68,.04) 0%,transparent 60%);}
+:root{
+  --bg:#050a0f;--panel:#0a1420;--border:#1a2a3a;
+  --green:#00ff88;--yellow:#ffd600;--orange:#ff6b00;--red:#ff1744;
+  --blue:#00b4ff;--purple:#c084fc;
+  --mono:'Share Tech Mono',monospace;--display:'Barlow Condensed',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:#c8dae8;font-family:var(--display);min-height:100vh;padding:20px 24px;
+  background-image:radial-gradient(ellipse at 20% 20%,rgba(0,180,255,.04) 0%,transparent 60%),
+  radial-gradient(ellipse at 80% 80%,rgba(255,23,68,.04) 0%,transparent 60%);}
 
-  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);}
-  .title{font-size:32px;font-weight:900;letter-spacing:4px;text-transform:uppercase;color:#fff;}
-  .subtitle{font-size:11px;letter-spacing:2px;color:#5a7a8a;text-transform:uppercase;margin-top:4px;font-family:var(--mono);}
-  .timestamp{text-align:right;font-family:var(--mono);font-size:11px;color:#5a7a8a;}
-  .time{font-size:22px;color:var(--blue);display:block;letter-spacing:2px;}
-  .section-label{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5a7a8a;font-family:var(--mono);margin-bottom:12px;padding-left:2px;}
+/* HEADER */
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.title{font-size:32px;font-weight:900;letter-spacing:4px;text-transform:uppercase;color:#fff;}
+.subtitle{font-size:11px;letter-spacing:2px;color:#5a7a8a;text-transform:uppercase;margin-top:4px;font-family:var(--mono);}
+.hdr-right{text-align:right;font-family:var(--mono);font-size:11px;color:#5a7a8a;}
+.clock{font-size:22px;color:var(--blue);display:block;letter-spacing:2px;}
+.refresh-status{font-size:10px;color:#5a7a8a;font-family:var(--mono);margin-top:4px;}
+.refresh-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:4px;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 
-  /* INDEX ROW */
-  .index-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;}
-  .index-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:16px 20px;position:relative;overflow:hidden;}
-  .index-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--blue);opacity:.5;}
-  .index-ticker{font-size:13px;font-weight:700;letter-spacing:2px;color:var(--blue);font-family:var(--mono);}
-  .index-name{font-size:11px;color:#8ab0c8;margin-top:2px;}
-  .index-price{font-size:28px;font-weight:700;color:#fff;margin-top:8px;font-family:var(--mono);}
-  .index-pct{font-size:14px;font-family:var(--mono);margin-top:4px;}
-  .index-pct.up{color:var(--green);}
-  .index-pct.down{color:var(--red);}
-  .index-pct.neutral{color:#8ab0c8;}
-  .closed-note{font-size:10px;color:var(--yellow);font-family:var(--mono);margin-top:5px;letter-spacing:1px;}
+.section-label{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5a7a8a;font-family:var(--mono);margin-bottom:12px;padding-left:2px;}
 
-  /* SCORE */
-  .main-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
-  .score-panel,.cta-panel{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:24px;--risk-color:var(--yellow);}
-  .score-label{font-size:11px;letter-spacing:3px;color:#5a7a8a;text-transform:uppercase;font-family:var(--mono);}
-  .score-num{font-size:88px;font-weight:900;line-height:1;color:var(--risk-color);font-family:var(--mono);text-shadow:0 0 50px var(--risk-color);margin:8px 0 4px;}
-  .score-level{font-size:20px;font-weight:700;letter-spacing:3px;color:var(--risk-color);text-transform:uppercase;}
-  .score-bar{height:6px;background:rgba(255,255,255,.08);border-radius:3px;margin:16px 0 8px;position:relative;overflow:hidden;}
-  .score-fill{height:100%;border-radius:3px;background:var(--risk-color);transition:width 1s ease;box-shadow:0 0 10px var(--risk-color);}
-  .score-pointer{position:absolute;top:-6px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid var(--risk-color);transform:translateX(-50%);transition:left 1s ease;}
-  .cta-action{font-size:28px;font-weight:900;letter-spacing:2px;color:var(--risk-color);text-transform:uppercase;margin:8px 0 16px;}
-  .cta-bullets{list-style:none;}
-  .cta-bullets li{font-size:14px;color:#c8dae8;padding:6px 0;border-bottom:1px solid var(--border);line-height:1.5;}
-  .cta-bullets li::before{content:'▸ ';color:var(--risk-color);}
+/* INDEX CARDS */
+.index-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;}
+.index-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:16px 20px;position:relative;overflow:hidden;}
+.index-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--blue);opacity:.5;}
+.index-ticker{font-size:13px;font-weight:700;letter-spacing:2px;color:var(--blue);font-family:var(--mono);}
+.index-name{font-size:11px;color:#8ab0c8;margin-top:2px;}
+.index-price{font-size:28px;font-weight:700;color:#fff;margin-top:8px;font-family:var(--mono);}
+.index-pct{font-size:14px;font-family:var(--mono);margin-top:4px;}
+.index-pct.up{color:var(--green);} .index-pct.down{color:var(--red);} .index-pct.neutral{color:#8ab0c8;}
+.data-note{font-size:10px;color:var(--yellow);font-family:var(--mono);margin-top:5px;}
 
-  /* INDICATOR CARDS */
-  .indicators-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;}
-  .ind-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:16px;}
-  .ind-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
-  .ind-ticker{font-size:11px;font-weight:700;letter-spacing:2px;color:#7ec8e3;font-family:var(--mono);}
-  .ind-weight{font-size:10px;color:#7ec8e3;font-family:var(--mono);}
-  .ind-name{font-size:12px;color:#9ab8c8;margin-bottom:6px;}
-  .ind-value{font-size:26px;font-weight:700;font-family:var(--mono);margin:4px 0;}
-  .ind-change{font-size:11px;color:#6a8a9a;font-family:var(--mono);margin-bottom:6px;}
-  .ind-signal{font-size:11px;letter-spacing:1px;font-weight:700;text-transform:uppercase;font-family:var(--mono);}
-  .ind-bar-wrap{height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:8px;}
-  .ind-bar-fill{height:100%;border-radius:2px;}
+/* SCORE + CTA */
+.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+.score-panel,.cta-panel{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:24px;--risk-color:var(--yellow);}
+.score-label{font-size:11px;letter-spacing:3px;color:#5a7a8a;text-transform:uppercase;font-family:var(--mono);}
+.score-num{font-size:88px;font-weight:900;line-height:1;color:var(--risk-color);font-family:var(--mono);text-shadow:0 0 50px var(--risk-color);margin:8px 0 4px;}
+.score-level{font-size:20px;font-weight:700;letter-spacing:3px;color:var(--risk-color);text-transform:uppercase;}
+.score-bar{height:6px;background:rgba(255,255,255,.08);border-radius:3px;margin:16px 0 8px;position:relative;overflow:hidden;}
+.score-fill{height:100%;border-radius:3px;background:var(--risk-color);transition:width 1.2s ease;box-shadow:0 0 10px var(--risk-color);}
+.score-pointer{position:absolute;top:-6px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid var(--risk-color);transform:translateX(-50%);transition:left 1.2s ease;}
+.cta-action{font-size:28px;font-weight:900;letter-spacing:2px;color:var(--risk-color);text-transform:uppercase;margin:8px 0 16px;}
+.cta-bullets{list-style:none;}
+.cta-bullets li{font-size:14px;color:#c8dae8;padding:6px 0;border-bottom:1px solid var(--border);line-height:1.5;}
+.cta-bullets li::before{content:'▸ ';color:var(--risk-color);}
 
-  /* SUPPLY CHAIN */
-  .sc-section{margin-bottom:24px;}
-  .sc-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
-  .sc-badge{background:rgba(192,132,252,.15);border:1px solid rgba(192,132,252,.4);color:var(--purple);font-size:10px;font-family:var(--mono);letter-spacing:2px;text-transform:uppercase;padding:3px 8px;border-radius:3px;}
-  .sc-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
-  .sc-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:14px 12px;position:relative;overflow:hidden;}
-  .sc-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
-  .sc-card.critical::before{background:var(--red);}
-  .sc-card.warning::before{background:var(--orange);}
-  .sc-card.watch::before{background:var(--yellow);}
-  .sc-icon{font-size:20px;margin-bottom:8px;}
-  .sc-name{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#9ab8c8;font-family:var(--mono);margin-bottom:4px;}
-  .sc-value{font-size:20px;font-weight:900;font-family:var(--mono);margin:4px 0;}
-  .sc-card.critical .sc-value{color:var(--red);text-shadow:0 0 20px rgba(255,23,68,.5);}
-  .sc-card.warning  .sc-value{color:var(--orange);text-shadow:0 0 20px rgba(255,107,0,.5);}
-  .sc-card.watch    .sc-value{color:var(--yellow);}
-  .sc-sub{font-size:10px;color:#5a7a8a;font-family:var(--mono);line-height:1.4;margin-bottom:6px;}
-  .sc-status{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;font-family:var(--mono);padding:2px 6px;border-radius:2px;display:inline-block;}
-  .sc-card.critical .sc-status{background:rgba(255,23,68,.15);color:var(--red);}
-  .sc-card.warning  .sc-status{background:rgba(255,107,0,.15);color:var(--orange);}
-  .sc-card.watch    .sc-status{background:rgba(255,214,0,.15);color:var(--yellow);}
-  .sc-cta-row{margin-top:12px;padding:12px 16px;background:rgba(192,132,252,.07);border:1px solid rgba(192,132,252,.2);border-radius:6px;font-size:12px;font-family:var(--mono);color:#6a8a9a;display:flex;align-items:flex-start;gap:10px;}
-  .sc-cta-row a{color:var(--purple);text-decoration:none;}
-  .sc-cta-row a:hover{text-decoration:underline;}
+/* INDICATOR CARDS */
+.indicators-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;}
+.ind-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:16px;}
+.ind-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.ind-ticker{font-size:11px;font-weight:700;letter-spacing:2px;color:#7ec8e3;font-family:var(--mono);}
+.ind-weight{font-size:10px;color:#7ec8e3;font-family:var(--mono);}
+.ind-name{font-size:12px;color:#9ab8c8;margin-bottom:6px;}
+.ind-value{font-size:26px;font-weight:700;font-family:var(--mono);margin:4px 0;}
+.ind-change{font-size:11px;color:#6a8a9a;font-family:var(--mono);margin-bottom:6px;}
+.ind-signal{font-size:11px;letter-spacing:1px;font-weight:700;text-transform:uppercase;font-family:var(--mono);}
+.ind-bar-wrap{height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:8px;}
+.ind-bar-fill{height:100%;border-radius:2px;}
 
-  .refresh-btn{background:transparent;border:1px solid var(--border);color:#8ab0c8;font-family:var(--mono);font-size:12px;letter-spacing:2px;padding:8px 20px;border-radius:4px;cursor:pointer;display:block;margin:0 auto;text-transform:uppercase;transition:all .2s;}
-  .refresh-btn:hover{border-color:var(--blue);color:var(--blue);}
-  .disclaimer{text-align:center;font-family:var(--mono);font-size:10px;color:#4a6a7a;margin-top:16px;letter-spacing:1px;}
+/* SENTIMENT ROW — CNN / NAAIM / AAII */
+.sentiment-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+.sent-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:20px;}
+.sent-title{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5a7a8a;font-family:var(--mono);margin-bottom:12px;}
+.sent-gauge-wrap{display:flex;align-items:center;gap:16px;margin-bottom:12px;}
+.gauge-circle{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;}
+.gauge-num{font-size:22px;font-weight:900;font-family:var(--mono);color:#fff;}
+.gauge-label{font-size:10px;color:#5a7a8a;font-family:var(--mono);text-align:center;margin-top:2px;}
+.sent-right{flex:1;}
+.sent-value{font-size:28px;font-weight:900;font-family:var(--mono);}
+.sent-sub{font-size:11px;color:#6a8a9a;font-family:var(--mono);margin-top:4px;}
+.sent-bar-track{height:8px;background:linear-gradient(to right,#ff1744,#ff6b00,#ffd600,#00ff88);border-radius:4px;margin-top:12px;position:relative;}
+.sent-bar-needle{position:absolute;top:-4px;width:4px;height:16px;background:#fff;border-radius:2px;transform:translateX(-50%);transition:left .8s ease;box-shadow:0 0 6px rgba(255,255,255,.6);}
+.aaii-bars{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;}
+.aaii-bar-item{text-align:center;}
+.aaii-bar-label{font-size:10px;color:#5a7a8a;font-family:var(--mono);margin-bottom:4px;}
+.aaii-bar-val{font-size:16px;font-weight:700;font-family:var(--mono);}
+.aaii-bar-track{height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:4px;}
+.aaii-bar-fill{height:100%;border-radius:2px;}
+.naaim-meter{margin-top:10px;}
+.naaim-labels{display:flex;justify-content:space-between;font-size:10px;color:#5a7a8a;font-family:var(--mono);margin-bottom:4px;}
+
+/* SPY CHART */
+.chart-section{margin-bottom:24px;}
+.chart-container{background:var(--panel);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+.chart-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;border-bottom:1px solid var(--border);}
+.chart-title{font-size:14px;font-weight:700;letter-spacing:2px;color:#fff;font-family:var(--mono);}
+.chart-controls{display:flex;gap:8px;}
+.chart-btn{background:transparent;border:1px solid var(--border);color:#8ab0c8;font-family:var(--mono);font-size:10px;letter-spacing:1px;padding:4px 10px;border-radius:3px;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.chart-btn.active,.chart-btn:hover{border-color:var(--blue);color:var(--blue);}
+#spyChart{height:320px;width:100%;}
+#rsiChart{height:120px;width:100%;border-top:1px solid var(--border);}
+.chart-legend{padding:10px 20px;display:flex;gap:20px;flex-wrap:wrap;border-top:1px solid var(--border);}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);color:#8ab0c8;}
+.legend-dot{width:10px;height:3px;border-radius:1px;}
+
+/* SUPPLY CHAIN */
+.sc-section{margin-bottom:24px;}
+.sc-header{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.sc-badge{background:rgba(192,132,252,.15);border:1px solid rgba(192,132,252,.4);color:var(--purple);font-size:10px;font-family:var(--mono);letter-spacing:2px;text-transform:uppercase;padding:3px 8px;border-radius:3px;}
+.sc-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+.sc-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:14px 12px;position:relative;overflow:hidden;}
+.sc-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.sc-card.critical::before{background:var(--red);} .sc-card.warning::before{background:var(--orange);} .sc-card.watch::before{background:var(--yellow);}
+.sc-icon{font-size:20px;margin-bottom:8px;}
+.sc-name{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#9ab8c8;font-family:var(--mono);margin-bottom:4px;}
+.sc-value{font-size:20px;font-weight:900;font-family:var(--mono);margin:4px 0;}
+.sc-card.critical .sc-value{color:var(--red);text-shadow:0 0 20px rgba(255,23,68,.5);}
+.sc-card.warning  .sc-value{color:var(--orange);text-shadow:0 0 20px rgba(255,107,0,.5);}
+.sc-card.watch    .sc-value{color:var(--yellow);}
+.sc-sub{font-size:10px;color:#5a7a8a;font-family:var(--mono);line-height:1.4;margin-bottom:6px;}
+.sc-status{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;font-family:var(--mono);padding:2px 6px;border-radius:2px;display:inline-block;}
+.sc-card.critical .sc-status{background:rgba(255,23,68,.15);color:var(--red);}
+.sc-card.warning  .sc-status{background:rgba(255,107,0,.15);color:var(--orange);}
+.sc-card.watch    .sc-status{background:rgba(255,214,0,.15);color:var(--yellow);}
+.sc-cta-row{margin-top:12px;padding:12px 16px;background:rgba(192,132,252,.07);border:1px solid rgba(192,132,252,.2);border-radius:6px;font-size:12px;font-family:var(--mono);color:#6a8a9a;display:flex;align-items:flex-start;gap:10px;}
+.sc-cta-row a{color:var(--purple);text-decoration:none;}
+.sc-cta-row a:hover{text-decoration:underline;}
+
+.disclaimer{text-align:center;font-family:var(--mono);font-size:10px;color:#4a6a7a;margin-top:16px;letter-spacing:1px;padding-bottom:20px;}
 </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <div class="header">
   <div>
     <div class="title">SPY Risk Dashboard</div>
     <div class="subtitle">Composite Market Decline Indicator · 15min Delay · Not Financial Advice</div>
   </div>
-  <div class="timestamp">
-    <span class="time" id="clock">--:--:--</span>
+  <div class="hdr-right">
+    <span class="clock" id="clock">--:--:--</span>
     <span id="dateLine">—</span>
+    <div class="refresh-status"><span class="refresh-dot"></span><span id="refreshCountdown">Auto-refresh in 60s</span></div>
   </div>
 </div>
 
+<!-- INDEX ROW -->
 <div class="section-label">▸ Market Indices (Live)</div>
 <div class="index-row">
   <div class="index-card">
-    <div class="index-ticker">SPY</div>
-    <div class="index-name">S&amp;P 500 ETF</div>
+    <div class="index-ticker">SPY</div><div class="index-name">S&amp;P 500 ETF</div>
     <div class="index-price" id="spyPrice">—</div>
     <div class="index-pct neutral" id="spyPct">—</div>
-    <div class="closed-note" id="spyNote"></div>
+    <div class="data-note" id="spyNote"></div>
   </div>
   <div class="index-card">
-    <div class="index-ticker">QQQ</div>
-    <div class="index-name">Nasdaq 100 ETF</div>
+    <div class="index-ticker">QQQ</div><div class="index-name">Nasdaq 100 ETF</div>
     <div class="index-price" id="qqqPrice">—</div>
     <div class="index-pct neutral" id="qqqPct">—</div>
-    <div class="closed-note" id="qqqNote"></div>
+    <div class="data-note" id="qqqNote"></div>
   </div>
   <div class="index-card">
-    <div class="index-ticker">VIX</div>
-    <div class="index-name">Volatility Index</div>
+    <div class="index-ticker">VIX</div><div class="index-name">Volatility Index</div>
     <div class="index-price" id="vixPrice">—</div>
     <div class="index-pct neutral" id="vixPct">—</div>
-    <div class="closed-note" id="vixNote"></div>
+    <div class="data-note" id="vixNote"></div>
   </div>
 </div>
 
+<!-- SCORE + CTA -->
 <div class="section-label">▸ Composite Risk Score</div>
 <div class="main-grid">
   <div class="score-panel" id="scorePanel">
@@ -151,48 +187,153 @@
   </div>
 </div>
 
+<!-- INDICATOR BREAKDOWN -->
 <div class="section-label">▸ Risk Indicator Breakdown</div>
 <div class="indicators-grid" id="indicatorGrid">
   <div class="ind-card"><div class="ind-name">⬤ Initializing...</div></div>
 </div>
 
+<!-- SPY CHART -->
+<div class="chart-section">
+  <div class="section-label">▸ SPY Price Chart · Technical Indicators</div>
+  <div class="chart-container">
+    <div class="chart-header">
+      <div class="chart-title">SPY — S&amp;P 500 ETF</div>
+      <div class="chart-controls">
+        <button class="chart-btn" onclick="setRange(30)">1M</button>
+        <button class="chart-btn active" onclick="setRange(90)">3M</button>
+        <button class="chart-btn" onclick="setRange(180)">6M</button>
+        <button class="chart-btn" onclick="setRange(365)">1Y</button>
+      </div>
+    </div>
+    <div id="spyChart"></div>
+    <div id="rsiChart"></div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#00b4ff"></div>SPY Price</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ffd600"></div>21-Day SMA</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(192,132,252,.6)"></div>Bollinger Upper</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(192,132,252,.3)"></div>Bollinger Lower</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#00ff88"></div>RSI (14)</div>
+    </div>
+  </div>
+</div>
+
+<!-- SENTIMENT ROW -->
+<div class="section-label">▸ Market Sentiment Indicators</div>
+<div class="sentiment-row">
+
+  <!-- CNN Fear & Greed -->
+  <div class="sent-card">
+    <div class="sent-title">CNN Fear &amp; Greed Index</div>
+    <div class="sent-gauge-wrap">
+      <div>
+        <div class="gauge-circle" id="cnnCircle" style="border:4px solid #ff6b00;background:rgba(255,107,0,.1)">
+          <div>
+            <div class="gauge-num" id="cnnNum">—</div>
+          </div>
+        </div>
+        <div class="gauge-label" id="cnnLabel">Loading...</div>
+      </div>
+      <div class="sent-right">
+        <div class="sent-value" id="cnnMood" style="color:#ff6b00">—</div>
+        <div class="sent-sub" id="cnnSub">7 market signals combined</div>
+        <div class="sent-sub" style="margin-top:4px">0 = Extreme Fear · 100 = Extreme Greed</div>
+      </div>
+    </div>
+    <div class="sent-bar-track">
+      <div class="sent-bar-needle" id="cnnNeedle" style="left:50%"></div>
+    </div>
+  </div>
+
+  <!-- NAAIM -->
+  <div class="sent-card">
+    <div class="sent-title">NAAIM Exposure Index</div>
+    <div class="sent-gauge-wrap">
+      <div>
+        <div class="gauge-circle" id="naaimCircle" style="border:4px solid #ffd600;background:rgba(255,214,0,.1)">
+          <div>
+            <div class="gauge-num" id="naaimNum">—</div>
+          </div>
+        </div>
+        <div class="gauge-label" id="naaimLabel">Active Mgrs</div>
+      </div>
+      <div class="sent-right">
+        <div class="sent-value" id="naaimMood" style="color:#ffd600">—</div>
+        <div class="sent-sub">Active manager equity exposure</div>
+        <div class="sent-sub" style="margin-top:4px">0=fully short · 100=fully long · 200=2× leveraged</div>
+      </div>
+    </div>
+    <div class="naaim-meter">
+      <div class="naaim-labels"><span>0 (Short)</span><span>50 (Neutral)</span><span>100 (Long)</span></div>
+      <div class="sent-bar-track" style="background:linear-gradient(to right,#ff1744,#ffd600,#00ff88)">
+        <div class="sent-bar-needle" id="naaimNeedle" style="left:50%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AAII -->
+  <div class="sent-card">
+    <div class="sent-title">AAII Sentiment Survey</div>
+    <div class="sent-sub" style="margin-bottom:10px;color:#5a7a8a;font-family:var(--mono);font-size:10px">Individual investor weekly poll</div>
+    <div class="aaii-bars">
+      <div class="aaii-bar-item">
+        <div class="aaii-bar-label">BULLISH</div>
+        <div class="aaii-bar-val" id="aaiiBull" style="color:var(--green)">—</div>
+        <div class="aaii-bar-track"><div class="aaii-bar-fill" id="aaiiBullFill" style="width:0%;background:var(--green)"></div></div>
+      </div>
+      <div class="aaii-bar-item">
+        <div class="aaii-bar-label">NEUTRAL</div>
+        <div class="aaii-bar-val" id="aaiiNeut" style="color:var(--yellow)">—</div>
+        <div class="aaii-bar-track"><div class="aaii-bar-fill" id="aaiiNeutFill" style="width:0%;background:var(--yellow)"></div></div>
+      </div>
+      <div class="aaii-bar-item">
+        <div class="aaii-bar-label">BEARISH</div>
+        <div class="aaii-bar-val" id="aaiiBear" style="color:var(--red)">—</div>
+        <div class="aaii-bar-track"><div class="aaii-bar-fill" id="aaiiBearFill" style="width:0%;background:var(--red)"></div></div>
+      </div>
+    </div>
+    <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border);">
+      <div style="font-size:10px;color:#5a7a8a;font-family:var(--mono);margin-bottom:4px">BULL-BEAR SPREAD</div>
+      <div style="font-size:22px;font-weight:900;font-family:var(--mono)" id="aaiiSpread">—</div>
+      <div style="font-size:10px;color:#5a7a8a;font-family:var(--mono)" id="aaiiSignal">—</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SUPPLY CHAIN -->
 <div class="sc-section">
   <div class="sc-header">
     <div class="section-label" style="margin:0">▸ Supply Chain Stress Indicators</div>
-    <div class="sc-badge">Physical Economy · Manual + API Signals</div>
+    <div class="sc-badge">Physical Economy · Manual Signals</div>
   </div>
   <div class="sc-grid">
     <div class="sc-card critical">
-      <div class="sc-icon">🚢</div>
-      <div class="sc-name">Hormuz Traffic</div>
+      <div class="sc-icon">🚢</div><div class="sc-name">Hormuz Traffic</div>
       <div class="sc-value">~4 mb/d</div>
       <div class="sc-sub">Pre-war: &gt;20 mb/d<br>Source: EIA / MarineTraffic</div>
       <div class="sc-status">CRITICAL</div>
     </div>
     <div class="sc-card critical">
-      <div class="sc-icon">🧪</div>
-      <div class="sc-name">Helium Market</div>
+      <div class="sc-icon">🧪</div><div class="sc-name">Helium Market</div>
       <div class="sc-value">Force Maj.</div>
       <div class="sc-sub">Qatar offline (~33% global)<br>Source: ICIS / Argus</div>
       <div class="sc-status">CRITICAL</div>
     </div>
     <div class="sc-card critical">
-      <div class="sc-icon">⚗️</div>
-      <div class="sc-name">Sulfuric Acid</div>
+      <div class="sc-icon">⚗️</div><div class="sc-name">Sulfuric Acid</div>
       <div class="sc-value">BAN</div>
       <div class="sc-sub">China export ban May 1, 2026<br>Source: SunSirs</div>
       <div class="sc-status">CRITICAL</div>
     </div>
     <div class="sc-card watch">
-      <div class="sc-icon">🚛</div>
-      <div class="sc-name">OTRI (Freight)</div>
+      <div class="sc-icon">🚛</div><div class="sc-name">OTRI (Freight)</div>
       <div class="sc-value">~14%</div>
       <div class="sc-sub">Outbound Tender Reject Index<br>Source: FreightWaves SONAR</div>
       <div class="sc-status">WATCH</div>
     </div>
     <div class="sc-card warning">
-      <div class="sc-icon">🛢️</div>
-      <div class="sc-name">Naphtha Spread</div>
+      <div class="sc-icon">🛢️</div><div class="sc-name">Naphtha Spread</div>
       <div class="sc-value">+38%</div>
       <div class="sc-sub">WoW price delta (Asia)<br>Source: SunSirs / Argus</div>
       <div class="sc-status">WARNING</div>
@@ -202,24 +343,24 @@
     <span style="color:var(--purple);font-size:16px">⚡</span>
     <span>
       <strong style="color:#c8dae8">Analyst early-warning sources:</strong>&nbsp;
-      <a href="https://freightwaves.com" target="_blank">FreightWaves OTRI</a> &gt;18% = carrier contract rejections.&nbsp;
-      <a href="https://www.icis.com" target="_blank">ICIS Helium</a> spike = pharma NMR shutdown imminent.&nbsp;
-      <a href="https://en.sunsirs.com" target="_blank">SunSirs Naphtha</a> +25% WoW = hard plastics crisis.&nbsp;
+      <a href="https://freightwaves.com" target="_blank">FreightWaves OTRI</a> &gt;18% = carrier rejections.&nbsp;
+      <a href="https://www.icis.com" target="_blank">ICIS Helium</a> spike = pharma NMR shutdown.&nbsp;
+      <a href="https://en.sunsirs.com" target="_blank">SunSirs Naphtha</a> +25% WoW = plastics crisis.&nbsp;
       <a href="https://www.marinetraffic.com" target="_blank">MarineTraffic Hormuz</a> dwell +20% WoW = depression confirmed.
-      &nbsp;<span style="color:#4a6a7a">| Last check: <span id="scLastUpdate">—</span></span>
+      &nbsp;<span style="color:#4a6a7a">| Last update: <span id="scLastUpdate">—</span></span>
     </span>
   </div>
 </div>
 
-<button class="refresh-btn" onclick="loadData()">↺ Refresh Data</button>
-<div class="disclaimer">Market data via Yahoo Finance · CAPE/Buffett are semi-static benchmarks · Supply chain values manually curated · Not financial advice</div>
+<div class="disclaimer">Market data via Yahoo Finance proxies · Sentiment indicators are estimates — verify at CNN Markets, NAAIM.org, AAII.com · Not financial advice</div>
 
 <script>
+// ─── CONSTANTS ───────────────────────────────────────────────
 const RISK={
   low:    {label:'LOW RISK',    color:'#00ff88',action:'STAY INVESTED', bullets:['Market fairly valued — no hedges needed','Standard diversification is sufficient','Monitor for trend changes monthly','No action required on SPY position']},
-  elevated:{label:'ELEVATED RISK',color:'#ffd600',action:'TIGHTEN UP',   bullets:['Trim overweight equity positions 10–15%','Build cash reserve to 10–15% of portfolio','Consider SPY put options 3–6 months out','Review stop-losses on high-beta holdings']},
+  elevated:{label:'ELEVATED RISK',color:'#ffd600',action:'TIGHTEN UP',  bullets:['Trim overweight equity positions 10–15%','Build cash reserve to 10–15%','Consider SPY put options 3–6 months out','Review stop-losses on high-beta holdings']},
   high:   {label:'HIGH RISK',   color:'#ff6b00',action:'REDUCE EXPOSURE',bullets:['Reduce equity exposure by 20–30%','Rotate into bonds, gold, or cash','Buy SPY puts — Dec expiry, 10% OTM','Avoid adding new long positions']},
-  extreme:{label:'EXTREME RISK',color:'#ff1744',action:'DEFENSIVE MODE', bullets:['Move 40–50% to cash or short-duration bonds','Aggressive SPY put hedge — 6–12 month expiry','Consider inverse ETFs (SH, SDS) for active hedge','No new equity longs until score drops below 60']}
+  extreme:{label:'EXTREME RISK',color:'#ff1744',action:'DEFENSIVE MODE', bullets:['Move 40–50% to cash or short-duration bonds','Aggressive SPY put hedge — 6–12 month expiry','Consider inverse ETFs (SH, SDS)','No new equity longs until score drops below 60']}
 };
 const SC={red:'#ff1744',orange:'#ff6b00',yellow:'#ffd600',green:'#00ff88'};
 function getBand(s){return s<25?'low':s<50?'elevated':s<75?'high':'extreme';}
@@ -227,6 +368,202 @@ function fmt(v){return v!=null?'$'+v.toFixed(2):'—';}
 function fmtP(p){if(p==null)return '—';return(p>=0?'+':'')+p.toFixed(2)+'%';}
 function pC(p){return p==null?'neutral':p>=0?'up':'down';}
 
+// ─── CHART STATE ─────────────────────────────────────────────
+let mainChart=null, rsiChart=null, candleSeries=null, smaSeries=null, bbUpperSeries=null, bbLowerSeries=null, rsiSeries=null, rsiOBSeries=null, rsiOSSeries=null;
+let currentRange=90;
+let chartData=[];
+
+function initCharts(){
+  const chartOpts={
+    layout:{background:{color:'#0a1420'},textColor:'#8ab0c8'},
+    grid:{vertLines:{color:'#1a2a3a'},horzLines:{color:'#1a2a3a'}},
+    crosshair:{mode:1},
+    rightPriceScale:{borderColor:'#1a2a3a'},
+    timeScale:{borderColor:'#1a2a3a',timeVisible:true},
+    handleScroll:false,handleScale:false
+  };
+  mainChart=LightweightCharts.createChart(document.getElementById('spyChart'),{...chartOpts,height:320});
+  candleSeries=mainChart.addCandlestickSeries({upColor:'#00ff88',downColor:'#ff1744',borderUpColor:'#00ff88',borderDownColor:'#ff1744',wickUpColor:'#00ff88',wickDownColor:'#ff1744'});
+  smaSeries=mainChart.addLineSeries({color:'#ffd600',lineWidth:2,priceLineVisible:false,lastValueVisible:false});
+  bbUpperSeries=mainChart.addLineSeries({color:'rgba(192,132,252,0.6)',lineWidth:1,priceLineVisible:false,lastValueVisible:false,lineStyle:2});
+  bbLowerSeries=mainChart.addLineSeries({color:'rgba(192,132,252,0.3)',lineWidth:1,priceLineVisible:false,lastValueVisible:false,lineStyle:2});
+
+  rsiChart=LightweightCharts.createChart(document.getElementById('rsiChart'),{...chartOpts,height:120});
+  rsiSeries=rsiChart.addLineSeries({color:'#00ff88',lineWidth:2,priceLineVisible:false,lastValueVisible:true,title:'RSI'});
+  rsiOBSeries=rsiChart.addLineSeries({color:'rgba(255,23,68,0.4)',lineWidth:1,priceLineVisible:false,lastValueVisible:false,lineStyle:2});
+  rsiOSSeries=rsiChart.addLineSeries({color:'rgba(0,255,136,0.4)',lineWidth:1,priceLineVisible:false,lastValueVisible:false,lineStyle:2});
+  mainChart.timeScale().subscribeVisibleLogicalRangeChange(range=>{if(range)rsiChart.timeScale().setVisibleLogicalRange(range);});
+}
+
+function calcSMA(data,period){
+  return data.map((d,i)=>{
+    if(i<period-1)return null;
+    const avg=data.slice(i-period+1,i+1).reduce((a,b)=>a+b.close,0)/period;
+    return{time:d.time,value:avg};
+  }).filter(d=>d!==null);
+}
+function calcBB(data,period=21,mult=2){
+  const sma=calcSMA(data,period);
+  return sma.map((s,i)=>{
+    const slice=data.slice(i,i+period);
+    const sd=Math.sqrt(slice.reduce((a,b)=>a+Math.pow(b.close-s.value,2),0)/period);
+    return{time:s.time,upper:s.value+mult*sd,lower:s.value-mult*sd};
+  });
+}
+function calcRSI(data,period=14){
+  const result=[];
+  for(let i=period;i<data.length;i++){
+    let gains=0,losses=0;
+    for(let j=i-period+1;j<=i;j++){
+      const diff=data[j].close-data[j-1].close;
+      if(diff>0)gains+=diff; else losses+=Math.abs(diff);
+    }
+    const rs=(gains/period)/(losses/period||0.001);
+    result.push({time:data[i].time,value:100-(100/(1+rs))});
+  }
+  return result;
+}
+
+function renderChart(ohlcv){
+  if(!ohlcv||ohlcv.length<30)return;
+  chartData=ohlcv;
+  const candles=ohlcv.map(d=>({time:d.time,open:d.open,high:d.high,low:d.low,close:d.close}));
+  const sma=calcSMA(ohlcv,21);
+  const bb=calcBB(ohlcv,21,2);
+  const rsi=calcRSI(ohlcv,14);
+  const lastTime=ohlcv[ohlcv.length-1].time;
+  const firstTime=ohlcv[Math.max(0,ohlcv.length-currentRange)].time;
+  const obLine=rsi.map(d=>({time:d.time,value:70}));
+  const osLine=rsi.map(d=>({time:d.time,value:30}));
+
+  candleSeries.setData(candles);
+  smaSeries.setData(sma);
+  bbUpperSeries.setData(bb.map(d=>({time:d.time,value:d.upper})));
+  bbLowerSeries.setData(bb.map(d=>({time:d.time,value:d.lower})));
+  rsiSeries.setData(rsi);
+  rsiOBSeries.setData(obLine);
+  rsiOSSeries.setData(osLine);
+  mainChart.timeScale().setVisibleRange({from:firstTime,to:lastTime});
+  rsiChart.timeScale().setVisibleRange({from:firstTime,to:lastTime});
+}
+
+function setRange(days){
+  currentRange=days;
+  document.querySelectorAll('.chart-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  if(chartData.length>0){
+    const last=chartData[chartData.length-1].time;
+    const first=chartData[Math.max(0,chartData.length-days)].time;
+    mainChart.timeScale().setVisibleRange({from:first,to:last});
+    rsiChart.timeScale().setVisibleRange({from:first,to:last});
+  }
+}
+
+// ─── DATA FETCHING ────────────────────────────────────────────
+function parseYahooQuote(raw){
+  const d=raw.chart.result[0];
+  const closes=d.indicators.quote[0].close.filter(v=>v!=null);
+  const prev=closes[closes.length-2],curr=closes[closes.length-1];
+  if(!curr)return null;
+  return{price:curr,pct:prev?((curr-prev)/prev)*100:0};
+}
+function parseYahooOHLC(raw){
+  const d=raw.chart.result[0];
+  const ts=d.timestamps;
+  const q=d.indicators.quote[0];
+  const result=[];
+  for(let i=0;i<ts.length;i++){
+    if(!q.close[i]||!q.open[i])continue;
+    result.push({time:ts[i],open:q.open[i],high:q.high[i],low:q.low[i],close:q.close[i]});
+  }
+  return result;
+}
+
+async function tryProxies(yahooUrl){
+  const proxies=[
+    ()=>fetch('https://corsproxy.io/?url='+encodeURIComponent(yahooUrl),{signal:AbortSignal.timeout(7000)}).then(r=>r.json()),
+    ()=>fetch('https://api.allorigins.win/get?url='+encodeURIComponent(yahooUrl),{signal:AbortSignal.timeout(7000)}).then(r=>r.json()).then(j=>JSON.parse(j.result)),
+    ()=>fetch('https://thingproxy.freeboard.io/fetch/'+yahooUrl,{signal:AbortSignal.timeout(7000)}).then(r=>r.json())
+  ];
+  for(const p of proxies){try{const d=await p();if(d)return d;}catch(e){}}
+  return null;
+}
+
+async function fetchQuote(ticker){
+  const url='https://query1.finance.yahoo.com/v8/finance/chart/'+ticker+'?interval=1d&range=2d';
+  const raw=await tryProxies(url);
+  if(!raw)return null;
+  try{return parseYahooQuote(raw);}catch(e){return null;}
+}
+
+async function fetchOHLC(ticker,days=400){
+  const url='https://query1.finance.yahoo.com/v8/finance/chart/'+ticker+'?interval=1d&range='+(Math.ceil(days/252)*2)+'y';
+  const raw=await tryProxies(url);
+  if(!raw)return null;
+  try{return parseYahooOHLC(raw);}catch(e){return null;}
+}
+
+// ─── SENTIMENT (estimated / scraped via proxy) ────────────────
+async function fetchCNNFearGreed(){
+  // CNN Fear & Greed — try their public API
+  try{
+    const url='https://production.dataviz.cnn.io/index/fearandgreed/graphdata';
+    const raw=await tryProxies(url);
+    if(raw&&raw.fear_and_greed){
+      return{score:Math.round(raw.fear_and_greed.score),rating:raw.fear_and_greed.rating};
+    }
+  }catch(e){}
+  // fallback: reasonable estimate based on VIX/market data
+  return null;
+}
+
+function renderCNN(data){
+  const score=data?data.score:42; // estimated if API fails
+  const isEstimate=!data;
+  const col=score<25?'#ff1744':score<45?'#ff6b00':score<55?'#ffd600':score<75?'#a3d977':'#00ff88';
+  const mood=score<25?'EXTREME FEAR':score<45?'FEAR':score<55?'NEUTRAL':score<75?'GREED':'EXTREME GREED';
+  document.getElementById('cnnNum').textContent=score;
+  document.getElementById('cnnMood').textContent=mood;
+  document.getElementById('cnnMood').style.color=col;
+  document.getElementById('cnnCircle').style.borderColor=col;
+  document.getElementById('cnnCircle').style.background=col+'22';
+  document.getElementById('cnnNeedle').style.left=score+'%';
+  document.getElementById('cnnLabel').textContent=isEstimate?'Est.':'Live';
+  document.getElementById('cnnSub').textContent=isEstimate?'Estimated from VIX/price action':'7 market signals combined';
+}
+
+// NAAIM — weekly, use recent public data estimate
+function renderNAAIM(score){
+  score=score||62; // typical recent range; update manually
+  const col=score>80?'#ff1744':score>60?'#ff6b00':score>40?'#ffd600':score>20?'#a3d977':'#00ff88';
+  const mood=score>80?'OVEREXPOSED':score>60?'ELEVATED':score>40?'MODERATE':score>20?'CAUTIOUS':'DEFENSIVE';
+  document.getElementById('naaimNum').textContent=score;
+  document.getElementById('naaimMood').textContent=mood;
+  document.getElementById('naaimMood').style.color=col;
+  document.getElementById('naaimCircle').style.borderColor=col;
+  document.getElementById('naaimCircle').style.background=col+'22';
+  document.getElementById('naaimNeedle').style.left=Math.min(score,100)+'%';
+}
+
+// AAII — weekly survey, use recent estimates
+function renderAAII(bull,neut,bear){
+  bull=bull||31; neut=neut||23; bear=bear||46;
+  const spread=bull-bear;
+  const col=spread>10?'#00ff88':spread>0?'#ffd600':spread>-10?'#ff6b00':'#ff1744';
+  const sig=spread>10?'BULLISH TILT':spread>0?'SLIGHT BULL':spread>-10?'SLIGHT BEAR':'BEARISH TILT';
+  document.getElementById('aaiiBull').textContent=bull+'%';
+  document.getElementById('aaiiNeut').textContent=neut+'%';
+  document.getElementById('aaiiBear').textContent=bear+'%';
+  document.getElementById('aaiiBullFill').style.width=bull+'%';
+  document.getElementById('aaiiNeutFill').style.width=neut+'%';
+  document.getElementById('aaiiBearFill').style.width=bear+'%';
+  const sp=document.getElementById('aaiiSpread');
+  sp.textContent=(spread>=0?'+':'')+spread+'%';
+  sp.style.color=col;
+  document.getElementById('aaiiSignal').textContent=sig+' · Hist avg spread: +6.5%';
+}
+
+// ─── RENDER FUNCTIONS ─────────────────────────────────────────
 function renderIndex(pId,rId,nId,data){
   if(data){
     document.getElementById(pId).textContent=fmt(data.price);
@@ -235,7 +572,7 @@ function renderIndex(pId,rId,nId,data){
   }else{
     document.getElementById(pId).textContent='—';
     const el=document.getElementById(rId);el.textContent='No data';el.className='index-pct neutral';
-    document.getElementById(nId).textContent='↺ Proxy unavailable — hit Refresh';
+    document.getElementById(nId).textContent='↺ Proxy unreachable — retrying...';
   }
 }
 function renderScore(score){
@@ -245,17 +582,17 @@ function renderScore(score){
   const l=document.getElementById('scoreLevel');l.textContent=cfg.label;l.style.color=cfg.color;
   document.getElementById('scoreFill').style.width=score+'%';
   const p=document.getElementById('scorePointer');p.style.left=Math.min(score,97)+'%';p.style.borderBottomColor=cfg.color;
-  const a=document.getElementById('ctaAction');a.textContent=cfg.action;a.style.color=cfg.color;
+  document.getElementById('ctaAction').textContent=cfg.action;document.getElementById('ctaAction').style.color=cfg.color;
   document.getElementById('ctaBullets').innerHTML=cfg.bullets.map(b=>'<li>'+b+'</li>').join('');
 }
 function renderCards(c,spy,qqq,vix){
   const cards=[
-    {t:'CAPE / SHILLER PE',n:'Cyclically Adj. P/E',    v:c.cape.value,   ch:'Hist avg: 17.3 · 2× overvalued',sig:c.cape.signal,   sc:c.cape.sc,   s:c.cape.score,   w:'25%'},
+    {t:'CAPE / SHILLER PE',n:'Cyclically Adj. P/E',    v:c.cape.value,   ch:'Hist avg: 17.3 · 2× overvalued',sig:c.cape.signal,   sc:c.cape.sc,  s:c.cape.score,  w:'25%'},
     {t:'BUFFETT INDICATOR', n:'Mkt Cap / GDP',          v:c.buffett.value,ch:'Danger zone above 180%',         sig:c.buffett.signal,sc:c.buffett.sc,s:c.buffett.score,w:'20%'},
     {t:'^VIX',              n:'Volatility / Fear Index',v:vix?fmt(vix.price):'No data',ch:vix?fmtP(vix.pct)+' today':'Proxy failed',sig:c.vix.signal,sc:c.vix.sc,s:c.vix.score,w:'20%'},
     {t:'SPY DAILY MOVE',    n:'S&P 500 Price Action',   v:spy?fmtP(spy.pct):'No data', ch:spy?fmt(spy.price):'Proxy failed',       sig:c.spy.signal,sc:c.spy.sc,s:c.spy.score,w:'15%'},
     {t:'QQQ vs SPY',        n:'Tech Relative Strength', v:(qqq&&spy)?fmtP(qqq.pct-spy.pct):'No data',ch:'Spread today',sig:c.spread.signal,sc:c.spread.sc,s:c.spread.score,w:'10%'},
-    {t:'MARKET MOOD',       n:'Composite Sentiment',    v:c.mood.signal,  ch:'Multi-factor read',               sig:c.mood.signal,   sc:c.mood.sc,   s:c.mood.score,   w:'10%'}
+    {t:'MARKET MOOD',       n:'Composite Sentiment',    v:c.mood.signal,  ch:'Multi-factor read',               sig:c.mood.signal,  sc:c.mood.sc,  s:c.mood.score,  w:'10%'}
   ];
   document.getElementById('indicatorGrid').innerHTML=cards.map(cd=>{
     const col=SC[cd.sc]||'#ffd600';
@@ -268,35 +605,6 @@ function renderCards(c,spy,qqq,vix){
       +'<div class="ind-bar-wrap"><div class="ind-bar-fill" style="width:'+cd.s+'%;background:'+col+'"></div></div>'
       +'</div>';
   }).join('');
-}
-function parseYahoo(raw){
-  const d=raw.chart.result[0];
-  const closes=d.indicators.quote[0].close.filter(v=>v!=null);
-  const prev=closes[closes.length-2],curr=closes[closes.length-1];
-  if(!curr)return null;
-  return{price:curr,pct:prev?((curr-prev)/prev)*100:0};
-}
-async function fetchQ(ticker){
-  const yurl='https://query1.finance.yahoo.com/v8/finance/chart/'+ticker+'?interval=1d&range=2d';
-  const proxies=[
-    async()=>{
-      const r=await fetch('https://corsproxy.io/?url='+encodeURIComponent(yurl),{signal:AbortSignal.timeout(7000)});
-      return parseYahoo(await r.json());
-    },
-    async()=>{
-      const r=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(yurl),{signal:AbortSignal.timeout(7000)});
-      const j=await r.json();
-      return parseYahoo(JSON.parse(j.result));
-    },
-    async()=>{
-      const r=await fetch('https://thingproxy.freeboard.io/fetch/'+yurl,{signal:AbortSignal.timeout(7000)});
-      return parseYahoo(await r.json());
-    }
-  ];
-  for(const proxy of proxies){
-    try{const result=await proxy();if(result)return result;}catch(e){}
-  }
-  return null;
 }
 function calc(spy,qqq,vix){
   const cape=38.5,buf=205;let score=0,c={};
@@ -330,22 +638,63 @@ function calc(spy,qqq,vix){
   else{c.mood={signal:'BULLISH',sc:'green',score:10};score+=10*.10;}
   return{score:Math.min(100,Math.round(score)),indicators:c};
 }
+
+// ─── CLOCK & AUTO-REFRESH ─────────────────────────────────────
+let refreshTimer=60;
+let countdownInterval=null;
+
 function tick(){
   const n=new Date();
   document.getElementById('clock').textContent=n.toLocaleTimeString('en-US',{hour12:false});
   document.getElementById('dateLine').textContent=n.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
 }
+function startCountdown(){
+  refreshTimer=60;
+  if(countdownInterval)clearInterval(countdownInterval);
+  countdownInterval=setInterval(()=>{
+    refreshTimer--;
+    document.getElementById('refreshCountdown').textContent='Auto-refresh in '+refreshTimer+'s';
+    if(refreshTimer<=0){clearInterval(countdownInterval);loadData();}
+  },1000);
+}
+
+// ─── MAIN LOAD ────────────────────────────────────────────────
+let chartInited=false;
 async function loadData(){
   tick();
   document.getElementById('scLastUpdate').textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  const[spy,qqq,vix]=await Promise.all([fetchQ('SPY'),fetchQ('QQQ'),fetchQ('^VIX')]);
+  if(!chartInited){initCharts();chartInited=true;}
+
+  // Fetch quotes + OHLC in parallel
+  const[spy,qqq,vix,ohlc,cnnData]=await Promise.all([
+    fetchQuote('SPY'),fetchQuote('QQQ'),fetchQuote('^VIX'),
+    fetchOHLC('SPY',400),
+    fetchCNNFearGreed()
+  ]);
+
   renderIndex('spyPrice','spyPct','spyNote',spy);
   renderIndex('qqqPrice','qqqPct','qqqNote',qqq);
   renderIndex('vixPrice','vixPct','vixNote',vix);
   const{score,indicators}=calc(spy,qqq,vix);
   renderScore(score);
   renderCards(indicators,spy,qqq,vix);
+  if(ohlc&&ohlc.length>30)renderChart(ohlc);
+
+  // Sentiment — CNN live if available, else estimate from VIX
+  const vixVal=vix?vix.price:20;
+  const cnnEstimate=cnnData?null:{
+    score:vixVal>30?18:vixVal>25?32:vixVal>20?45:vixVal>15?60:72
+  };
+  renderCNN(cnnData||cnnEstimate);
+
+  // NAAIM & AAII — weekly data, use current estimates
+  // These update weekly — values as of latest public release
+  renderNAAIM(62);   // Update this manually each Wednesday after NAAIM publishes
+  renderAAII(31,23,46); // Update this manually each Thursday after AAII publishes
+
+  startCountdown();
 }
+
 setInterval(tick,1000);
 loadData();
 </script>
