@@ -234,8 +234,8 @@ function renderIndex(pId,rId,nId,data){
     document.getElementById(nId).textContent='';
   }else{
     document.getElementById(pId).textContent='—';
-    const el=document.getElementById(rId);el.textContent='Market closed';el.className='index-pct neutral';
-    document.getElementById(nId).textContent='↺ Live data unavailable today';
+    const el=document.getElementById(rId);el.textContent='No data';el.className='index-pct neutral';
+    document.getElementById(nId).textContent='↺ Proxy unavailable — hit Refresh';
   }
 }
 function renderScore(score){
@@ -252,9 +252,9 @@ function renderCards(c,spy,qqq,vix){
   const cards=[
     {t:'CAPE / SHILLER PE',n:'Cyclically Adj. P/E',    v:c.cape.value,   ch:'Hist avg: 17.3 · 2× overvalued',sig:c.cape.signal,   sc:c.cape.sc,   s:c.cape.score,   w:'25%'},
     {t:'BUFFETT INDICATOR', n:'Mkt Cap / GDP',          v:c.buffett.value,ch:'Danger zone above 180%',         sig:c.buffett.signal,sc:c.buffett.sc,s:c.buffett.score,w:'20%'},
-    {t:'^VIX',              n:'Volatility / Fear Index',v:vix?fmt(vix.price):'Mkt closed',ch:vix?fmtP(vix.pct)+' today':'No live data',sig:c.vix.signal,sc:c.vix.sc,s:c.vix.score,w:'20%'},
-    {t:'SPY DAILY MOVE',    n:'S&P 500 Price Action',   v:spy?fmtP(spy.pct):'Mkt closed', ch:spy?fmt(spy.price):'No live data',       sig:c.spy.signal,sc:c.spy.sc,s:c.spy.score,w:'15%'},
-    {t:'QQQ vs SPY',        n:'Tech Relative Strength', v:(qqq&&spy)?fmtP(qqq.pct-spy.pct):'Mkt closed',ch:'Spread today',sig:c.spread.signal,sc:c.spread.sc,s:c.spread.score,w:'10%'},
+    {t:'^VIX',              n:'Volatility / Fear Index',v:vix?fmt(vix.price):'No data',ch:vix?fmtP(vix.pct)+' today':'Proxy failed',sig:c.vix.signal,sc:c.vix.sc,s:c.vix.score,w:'20%'},
+    {t:'SPY DAILY MOVE',    n:'S&P 500 Price Action',   v:spy?fmtP(spy.pct):'No data', ch:spy?fmt(spy.price):'Proxy failed',       sig:c.spy.signal,sc:c.spy.sc,s:c.spy.score,w:'15%'},
+    {t:'QQQ vs SPY',        n:'Tech Relative Strength', v:(qqq&&spy)?fmtP(qqq.pct-spy.pct):'No data',ch:'Spread today',sig:c.spread.signal,sc:c.spread.sc,s:c.spread.score,w:'10%'},
     {t:'MARKET MOOD',       n:'Composite Sentiment',    v:c.mood.signal,  ch:'Multi-factor read',               sig:c.mood.signal,   sc:c.mood.sc,   s:c.mood.score,   w:'10%'}
   ];
   document.getElementById('indicatorGrid').innerHTML=cards.map(cd=>{
@@ -269,17 +269,34 @@ function renderCards(c,spy,qqq,vix){
       +'</div>';
   }).join('');
 }
+function parseYahoo(raw){
+  const d=raw.chart.result[0];
+  const closes=d.indicators.quote[0].close.filter(v=>v!=null);
+  const prev=closes[closes.length-2],curr=closes[closes.length-1];
+  if(!curr)return null;
+  return{price:curr,pct:prev?((curr-prev)/prev)*100:0};
+}
 async function fetchQ(ticker){
-  const url='https://api.allorigins.win/get?url='+encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/'+ticker+'?interval=1d&range=2d');
-  try{
-    const r=await fetch(url,{signal:AbortSignal.timeout(8000)});
-    const j=await r.json();
-    const d=JSON.parse(j.result).chart.result[0];
-    const c=d.indicators.quote[0].close.filter(v=>v!=null);
-    const prev=c[c.length-2],curr=c[c.length-1];
-    if(!curr)return null;
-    return{price:curr,pct:prev?((curr-prev)/prev)*100:0};
-  }catch(e){return null;}
+  const yurl='https://query1.finance.yahoo.com/v8/finance/chart/'+ticker+'?interval=1d&range=2d';
+  const proxies=[
+    async()=>{
+      const r=await fetch('https://corsproxy.io/?url='+encodeURIComponent(yurl),{signal:AbortSignal.timeout(7000)});
+      return parseYahoo(await r.json());
+    },
+    async()=>{
+      const r=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(yurl),{signal:AbortSignal.timeout(7000)});
+      const j=await r.json();
+      return parseYahoo(JSON.parse(j.result));
+    },
+    async()=>{
+      const r=await fetch('https://thingproxy.freeboard.io/fetch/'+yurl,{signal:AbortSignal.timeout(7000)});
+      return parseYahoo(await r.json());
+    }
+  ];
+  for(const proxy of proxies){
+    try{const result=await proxy();if(result)return result;}catch(e){}
+  }
+  return null;
 }
 function calc(spy,qqq,vix){
   const cape=38.5,buf=205;let score=0,c={};
