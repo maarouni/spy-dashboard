@@ -481,9 +481,9 @@ function parseYahooOHLC(raw){
 
 async function tryProxies(yahooUrl){
   const proxies=[
-    ()=>fetch('https://corsproxy.io/?url='+encodeURIComponent(yahooUrl),{signal:AbortSignal.timeout(7000)}).then(r=>r.json()),
-    ()=>fetch('https://api.allorigins.win/get?url='+encodeURIComponent(yahooUrl),{signal:AbortSignal.timeout(7000)}).then(r=>r.json()).then(j=>JSON.parse(j.result)),
-    ()=>fetch('https://thingproxy.freeboard.io/fetch/'+yahooUrl,{signal:AbortSignal.timeout(7000)}).then(r=>r.json())
+    ()=>fetch('https://corsproxy.io/?url='+encodeURIComponent(yahooUrl),{signal:AbortSignal.timeout(12000)}).then(r=>r.json()),
+    ()=>fetch('https://api.allorigins.win/get?url='+encodeURIComponent(yahooUrl),{signal:AbortSignal.timeout(12000)}).then(r=>r.json()).then(j=>JSON.parse(j.result)),
+    ()=>fetch('https://thingproxy.freeboard.io/fetch/'+yahooUrl,{signal:AbortSignal.timeout(12000)}).then(r=>r.json())
   ];
   for(const p of proxies){try{const d=await p();if(d)return d;}catch(e){}}
   return null;
@@ -497,10 +497,19 @@ async function fetchQuote(ticker){
 }
 
 async function fetchOHLC(ticker,days=400){
-  const url='https://query1.finance.yahoo.com/v8/finance/chart/'+ticker+'?interval=1d&range='+(Math.ceil(days/252)*2)+'y';
-  const raw=await tryProxies(url);
-  if(!raw)return null;
-  try{return parseYahooOHLC(raw);}catch(e){return null;}
+  // Try progressively smaller ranges so even a slow proxy can respond
+  const ranges=['2y','1y','6mo'];
+  for(const range of ranges){
+    const url='https://query1.finance.yahoo.com/v8/finance/chart/'+ticker+'?interval=1d&range='+range;
+    try{
+      const raw=await tryProxies(url);
+      if(raw){
+        const parsed=parseYahooOHLC(raw);
+        if(parsed&&parsed.length>20)return parsed;
+      }
+    }catch(e){}
+  }
+  return null;
 }
 
 // ─── SENTIMENT (estimated / scraped via proxy) ────────────────
@@ -665,10 +674,9 @@ async function loadData(){
   document.getElementById('scLastUpdate').textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   if(!chartInited){initCharts();chartInited=true;}
 
-  // Fetch quotes + OHLC in parallel
-  const[spy,qqq,vix,ohlc,cnnData]=await Promise.all([
+  // Fetch quotes first (fast), then chart data separately (slow)
+  const[spy,qqq,vix,cnnData]=await Promise.all([
     fetchQuote('SPY'),fetchQuote('QQQ'),fetchQuote('^VIX'),
-    fetchOHLC('SPY',400),
     fetchCNNFearGreed()
   ]);
 
@@ -678,7 +686,11 @@ async function loadData(){
   const{score,indicators}=calc(spy,qqq,vix);
   renderScore(score);
   renderCards(indicators,spy,qqq,vix);
-  if(ohlc&&ohlc.length>30)renderChart(ohlc);
+
+  // Chart loads independently so it never blocks the main data
+  fetchOHLC('SPY',400).then(ohlc=>{
+    if(ohlc&&ohlc.length>20)renderChart(ohlc);
+  });
 
   // Sentiment — CNN live if available, else estimate from VIX
   const vixVal=vix?vix.price:20;
