@@ -374,21 +374,25 @@ let currentRange=90;
 let chartData=[];
 
 function initCharts(){
+  const spyEl=document.getElementById('spyChart');
+  const rsiEl=document.getElementById('rsiChart');
+  const w=spyEl.clientWidth||window.innerWidth-48;
   const chartOpts={
+    width:w,
     layout:{background:{color:'#0a1420'},textColor:'#8ab0c8'},
     grid:{vertLines:{color:'#1a2a3a'},horzLines:{color:'#1a2a3a'}},
     crosshair:{mode:1},
     rightPriceScale:{borderColor:'#1a2a3a'},
-    timeScale:{borderColor:'#1a2a3a',timeVisible:true},
-    handleScroll:false,handleScale:false
+    timeScale:{borderColor:'#1a2a3a',timeVisible:true,fixLeftEdge:true,fixRightEdge:true},
+    handleScroll:true,handleScale:true
   };
-  mainChart=LightweightCharts.createChart(document.getElementById('spyChart'),{...chartOpts,height:320});
+  mainChart=LightweightCharts.createChart(spyEl,{...chartOpts,height:320});
   candleSeries=mainChart.addCandlestickSeries({upColor:'#00ff88',downColor:'#ff1744',borderUpColor:'#00ff88',borderDownColor:'#ff1744',wickUpColor:'#00ff88',wickDownColor:'#ff1744'});
   smaSeries=mainChart.addLineSeries({color:'#ffd600',lineWidth:2,priceLineVisible:false,lastValueVisible:false});
   bbUpperSeries=mainChart.addLineSeries({color:'rgba(192,132,252,0.6)',lineWidth:1,priceLineVisible:false,lastValueVisible:false,lineStyle:2});
   bbLowerSeries=mainChart.addLineSeries({color:'rgba(192,132,252,0.3)',lineWidth:1,priceLineVisible:false,lastValueVisible:false,lineStyle:2});
 
-  rsiChart=LightweightCharts.createChart(document.getElementById('rsiChart'),{...chartOpts,height:120});
+  rsiChart=LightweightCharts.createChart(rsiEl,{...chartOpts,height:120,width:w});
   rsiSeries=rsiChart.addLineSeries({color:'#00ff88',lineWidth:2,priceLineVisible:false,lastValueVisible:true,title:'RSI'});
   rsiOBSeries=rsiChart.addLineSeries({color:'rgba(255,23,68,0.4)',lineWidth:1,priceLineVisible:false,lastValueVisible:false,lineStyle:2});
   rsiOSSeries=rsiChart.addLineSeries({color:'rgba(0,255,136,0.4)',lineWidth:1,priceLineVisible:false,lastValueVisible:false,lineStyle:2});
@@ -469,13 +473,31 @@ function parseYahooQuote(raw){
 }
 function parseYahooOHLC(raw){
   const d=raw.chart.result[0];
-  const ts=d.timestamps;
+  // Yahoo uses 'timestamp' (singular) — handle both variants
+  const ts=d.timestamp||d.timestamps||[];
   const q=d.indicators.quote[0];
   const result=[];
+  const seen=new Set();
   for(let i=0;i<ts.length;i++){
     if(!q.close[i]||!q.open[i])continue;
-    result.push({time:ts[i],open:q.open[i],high:q.high[i],low:q.low[i],close:q.close[i]});
+    // Convert Unix seconds to YYYY-MM-DD string (required by Lightweight Charts v4)
+    const date=new Date(ts[i]*1000);
+    const y=date.getUTCFullYear();
+    const m=String(date.getUTCMonth()+1).padStart(2,'0');
+    const dd=String(date.getUTCDate()).padStart(2,'0');
+    const key=y+'-'+m+'-'+dd;
+    if(seen.has(key))continue; // deduplicate
+    seen.add(key);
+    result.push({
+      time:key,
+      open:Math.round(q.open[i]*100)/100,
+      high:Math.round(q.high[i]*100)/100,
+      low:Math.round(q.low[i]*100)/100,
+      close:Math.round(q.close[i]*100)/100
+    });
   }
+  // Must be sorted ascending by time
+  result.sort((a,b)=>a.time.localeCompare(b.time));
   return result;
 }
 
