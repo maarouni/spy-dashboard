@@ -128,11 +128,81 @@ body{background:var(--bg);color:#c8dae8;font-family:var(--display);min-height:10
 .sc-cta-row a:hover{text-decoration:underline;}
 
 .disclaimer{text-align:center;font-family:var(--mono);font-size:10px;color:#4a6a7a;margin-top:16px;letter-spacing:1px;padding-bottom:20px;}
+/* ALERT BANNER */
+.alert-banner{display:none;position:sticky;top:0;z-index:999;padding:14px 24px;margin:-20px -24px 20px;border-bottom:2px solid;font-family:var(--mono);font-size:13px;letter-spacing:1px;}
+.alert-banner.yellow{background:rgba(255,214,0,.12);border-color:var(--yellow);color:var(--yellow);}
+.alert-banner.orange{background:rgba(255,107,0,.15);border-color:var(--orange);color:var(--orange);}
+.alert-banner.red{background:rgba(255,23,68,.18);border-color:var(--red);color:var(--red);animation:flashborder 1.5s infinite;}
+@keyframes flashborder{0%,100%{border-color:var(--red);}50%{border-color:transparent;}}
+.alert-icon{font-size:18px;margin-right:10px;}
+.alert-triggers{font-size:11px;opacity:.8;margin-top:4px;}
+
+/* CRISIS INDICATORS ROW */
+.crisis-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+.crisis-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:16px;position:relative;overflow:hidden;}
+.crisis-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--muted);}
+.crisis-card.alert-green::before{background:var(--green);}
+.crisis-card.alert-yellow::before{background:var(--yellow);}
+.crisis-card.alert-orange::before{background:var(--orange);}
+.crisis-card.alert-red::before{background:var(--red);box-shadow:0 0 10px var(--red);}
+.crisis-ticker{font-size:11px;font-weight:700;letter-spacing:2px;color:#7ec8e3;font-family:var(--mono);}
+.crisis-name{font-size:11px;color:#9ab8c8;margin:3px 0 8px;}
+.crisis-price{font-size:26px;font-weight:700;font-family:var(--mono);}
+.crisis-pct{font-size:13px;font-family:var(--mono);margin-top:3px;}
+.crisis-pct.up{color:var(--green);} .crisis-pct.down{color:var(--red);} .crisis-pct.neutral{color:#8ab0c8;}
+.crisis-threshold{font-size:10px;color:#5a7a8a;font-family:var(--mono);margin-top:6px;line-height:1.5;border-top:1px solid var(--border);padding-top:6px;}
+.crisis-status{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;font-family:var(--mono);margin-top:4px;}
+
 </style>
 </head>
 <body>
 
 <!-- HEADER -->
+
+<!-- ALERT BANNER -->
+<div class="alert-banner" id="alertBanner">
+  <div><span class="alert-icon" id="alertIcon">⚠️</span><strong id="alertTitle">—</strong></div>
+  <div class="alert-triggers" id="alertTriggers">—</div>
+</div>
+
+
+<!-- CRISIS / EARLY WARNING INDICATORS -->
+<div class="section-label">▸ Crisis Early Warning Indicators</div>
+<div class="crisis-row">
+  <div class="crisis-card" id="crisisHYG">
+    <div class="crisis-ticker">HYG</div>
+    <div class="crisis-name">High-Yield Bond ETF</div>
+    <div class="crisis-price" id="hygPrice">—</div>
+    <div class="crisis-pct neutral" id="hygPct">—</div>
+    <div class="crisis-threshold">🔴 ALERT: Single day drop &gt;2%<br>🟠 WATCH: Drop &gt;1% for 2 days<br>Credit stress = equities follow in 2–3wks</div>
+    <div class="crisis-status" id="hygStatus">Loading...</div>
+  </div>
+  <div class="crisis-card" id="crisisLQD">
+    <div class="crisis-ticker">LQD</div>
+    <div class="crisis-name">Investment Grade Bond ETF</div>
+    <div class="crisis-price" id="lqdPrice">—</div>
+    <div class="crisis-pct neutral" id="lqdPct">—</div>
+    <div class="crisis-threshold">🔴 ALERT: HYG drops faster than LQD<br>Spread widening = credit crisis forming<br>Ackman's 2020 signal</div>
+    <div class="crisis-status" id="lqdStatus">Loading...</div>
+  </div>
+  <div class="crisis-card" id="crisisTLT">
+    <div class="crisis-ticker">TLT</div>
+    <div class="crisis-name">20-Year Treasury ETF</div>
+    <div class="crisis-price" id="tltPrice">—</div>
+    <div class="crisis-pct neutral" id="tltPct">—</div>
+    <div class="crisis-threshold">🔴 ALERT: TLT + SPY both down same day<br>= Forced liquidation / 2008 pattern<br>3 consecutive days = WE ARE DONE</div>
+    <div class="crisis-status" id="tltStatus">Loading...</div>
+  </div>
+  <div class="crisis-card" id="crisisDXY">
+    <div class="crisis-ticker">UUP</div>
+    <div class="crisis-name">US Dollar Index ETF</div>
+    <div class="crisis-price" id="dxyPrice">—</div>
+    <div class="crisis-pct neutral" id="dxyPct">—</div>
+    <div class="crisis-threshold">🔴 ALERT: UUP up &gt;1% while SPY drops<br>= Global dollar debt being called in<br>EM collapse → US equities 4–6wks later</div>
+    <div class="crisis-status" id="dxyStatus">Loading...</div>
+  </div>
+</div>
+
 <div class="header">
   <div>
     <div class="title">SPY Risk Dashboard</div>
@@ -349,6 +419,54 @@ body{background:var(--bg);color:#c8dae8;font-family:var(--display);min-height:10
       <a href="https://www.marinetraffic.com" target="_blank">MarineTraffic Hormuz</a> dwell +20% WoW = depression confirmed.
       &nbsp;<span style="color:#4a6a7a">| Last update: <span id="scLastUpdate">—</span></span>
     </span>
+  </div>
+</div>
+
+
+<!-- TRADINGVIEW ALERT SETUP -->
+<div style="background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:20px;margin-bottom:24px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="document.getElementById('tvGuide').style.display=document.getElementById('tvGuide').style.display==='none'?'block':'none'">
+    <div class="section-label" style="margin:0">▸ TradingView Daily Alert Setup — Push Notifications to Your Phone</div>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--purple)">TAP TO EXPAND ▾</div>
+  </div>
+  <div id="tvGuide" style="display:none;margin-top:16px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+      <div style="padding:14px;background:rgba(255,23,68,.07);border:1px solid rgba(255,23,68,.2);border-radius:6px;">
+        <div style="font-size:12px;font-weight:700;color:var(--red);font-family:var(--mono);letter-spacing:2px;margin-bottom:10px">🔴 RED ALERT — Set These 3</div>
+        <div style="font-size:12px;font-family:var(--mono);color:#c8dae8;line-height:2">
+          1. <strong style="color:#fff">VIX &gt; 30</strong> — Search "VIX" → Add Alert → Crossing Up → 30<br>
+          2. <strong style="color:#fff">SPY &lt; -3% day</strong> — SPY → Alert → % Change → Less Than → -3<br>
+          3. <strong style="color:#fff">HYG &lt; -2% day</strong> — HYG → Alert → % Change → Less Than → -2
+        </div>
+      </div>
+
+      <div style="padding:14px;background:rgba(255,107,0,.07);border:1px solid rgba(255,107,0,.2);border-radius:6px;">
+        <div style="font-size:12px;font-weight:700;color:var(--orange);font-family:var(--mono);letter-spacing:2px;margin-bottom:10px">🟠 ORANGE ALERT — Set These 3</div>
+        <div style="font-size:12px;font-family:var(--mono);color:#c8dae8;line-height:2">
+          1. <strong style="color:#fff">VIX &gt; 25</strong> — VIX → Alert → Crossing Up → 25<br>
+          2. <strong style="color:#fff">TLT &lt; -1% day</strong> — TLT → Alert → % Change → Less Than → -1<br>
+          3. <strong style="color:#fff">UUP &gt; +1% day</strong> — UUP → Alert → % Change → Greater Than → 1
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:14px;padding:14px;background:rgba(192,132,252,.07);border:1px solid rgba(192,132,252,.2);border-radius:6px;">
+      <div style="font-size:12px;font-weight:700;color:var(--purple);font-family:var(--mono);letter-spacing:2px;margin-bottom:8px">📱 HOW TO SET UP (5 minutes)</div>
+      <div style="font-size:12px;font-family:var(--mono);color:#c8dae8;line-height:2">
+        1. Download <strong style="color:#fff">TradingView app</strong> (free) on your phone<br>
+        2. Create free account at tradingview.com<br>
+        3. Search any ticker (eg: VIX) → tap the <strong style="color:#fff">bell icon 🔔</strong> → Set Alert<br>
+        4. Choose condition → enter threshold → enable <strong style="color:#fff">"Push Notification"</strong><br>
+        5. Free account gets <strong style="color:#fff">1 alert per ticker</strong> — enough for the 6 above<br>
+        6. <strong style="color:var(--yellow)">When your phone buzzes → open this dashboard → check the banner</strong>
+      </div>
+    </div>
+
+    <div style="margin-top:10px;font-size:10px;font-family:var(--mono);color:#5a7a8a">
+      ⚡ Pro tip: Set notification sound to something distinct so you hear it even in a meeting. These alerts hitting = open your brokerage app immediately.
+    </div>
   </div>
 </div>
 
@@ -696,15 +814,27 @@ async function loadData(){
   document.getElementById('scLastUpdate').textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   if(!chartInited){initCharts();chartInited=true;}
 
-  // Fetch quotes first (fast), then chart data separately (slow)
-  const[spy,qqq,vix,cnnData]=await Promise.all([
+  // Fetch all quotes in parallel
+  const[spy,qqq,vix,hyg,lqd,tlt,dxy,cnnData]=await Promise.all([
     fetchQuote('SPY'),fetchQuote('QQQ'),fetchQuote('^VIX'),
+    fetchQuote('HYG'),fetchQuote('LQD'),fetchQuote('TLT'),fetchQuote('UUP'),
     fetchCNNFearGreed()
   ]);
 
+  // Render main indices
   renderIndex('spyPrice','spyPct','spyNote',spy);
   renderIndex('qqqPrice','qqqPct','qqqNote',qqq);
   renderIndex('vixPrice','vixPct','vixNote',vix);
+
+  // Render crisis cards
+  renderCrisisCard('HYG', hyg, 'hyg', spy?spy.pct:null);
+  renderCrisisCard('LQD', lqd, 'lqd', spy?spy.pct:null);
+  renderCrisisCard('TLT', tlt, 'tlt', spy?spy.pct:null);
+  renderCrisisCard('DXY', dxy, 'dxy', spy?spy.pct:null);
+
+  // Evaluate and show alert banner
+  evaluateAlertBanner(hyg, lqd, tlt, dxy, spy, vix);
+
   const{score,indicators}=calc(spy,qqq,vix);
   renderScore(score);
   renderCards(indicators,spy,qqq,vix);
@@ -727,6 +857,109 @@ async function loadData(){
   renderAAII(31,23,46); // Update this manually each Thursday after AAII publishes
 
   startCountdown();
+}
+
+
+// ─── CRISIS INDICATOR LOGIC ──────────────────────────────────
+const CRISIS_THRESHOLDS = {
+  hyg:  { redDay: -2.0,   orangeDay: -1.0 },
+  lqd:  { redDay: -1.5,   orangeDay: -0.8 },
+  tlt:  { redDay: -1.0,   orangeDay: -0.5 },
+  dxy:  { redUp:   1.0,   orangeUp:  0.5  }
+};
+
+// Track consecutive days for TLT+SPY simultaneous drops
+let tltSpyBothDown = 0;
+
+function crisisColor(pct, ticker, spyPct) {
+  if (!pct) return { level: 'neutral', label: 'NO DATA', color: '#5a7a8a' };
+  if (ticker === 'tlt') {
+    const bothDown = pct < -CRISIS_THRESHOLDS.tlt.orangeDay && spyPct && spyPct < 0;
+    if (bothDown) return { level: 'alert-red', label: '🔴 FORCED LIQUIDATION SIGNAL', color: '#ff1744' };
+    if (pct < -CRISIS_THRESHOLDS.tlt.redDay) return { level: 'alert-orange', label: '🟠 BOND STRESS', color: '#ff6b00' };
+    if (pct > 0.5) return { level: 'alert-green', label: '✅ FLIGHT TO SAFETY ON', color: '#00ff88' };
+    return { level: 'alert-yellow', label: '🟡 WATCH', color: '#ffd600' };
+  }
+  if (ticker === 'dxy') {
+    if (pct > CRISIS_THRESHOLDS.dxy.redUp) return { level: 'alert-red', label: '🔴 DOLLAR SURGE — EM STRESS', color: '#ff1744' };
+    if (pct > CRISIS_THRESHOLDS.dxy.orangeUp) return { level: 'alert-orange', label: '🟠 DOLLAR RISING — WATCH', color: '#ff6b00' };
+    if (pct < -0.5) return { level: 'alert-green', label: '✅ DOLLAR EASING', color: '#00ff88' };
+    return { level: 'alert-yellow', label: '🟡 NEUTRAL', color: '#ffd600' };
+  }
+  // HYG / LQD
+  if (pct < CRISIS_THRESHOLDS[ticker].redDay) return { level: 'alert-red', label: '🔴 CREDIT CRISIS SIGNAL', color: '#ff1744' };
+  if (pct < CRISIS_THRESHOLDS[ticker].orangeDay) return { level: 'alert-orange', label: '🟠 CREDIT STRESS', color: '#ff6b00' };
+  if (pct > 0.5) return { level: 'alert-green', label: '✅ CREDIT HEALTHY', color: '#00ff88' };
+  return { level: 'alert-yellow', label: '🟡 WATCH', color: '#ffd600' };
+}
+
+function renderCrisisCard(idPrefix, data, ticker, spyPct) {
+  if (!data) return;
+  const { level, label, color } = crisisColor(data.pct, ticker, spyPct);
+  const card = document.getElementById('crisis' + idPrefix);
+  card.className = 'crisis-card ' + level;
+  const priceEl = document.getElementById(idPrefix.toLowerCase() + 'Price');
+  const pctEl   = document.getElementById(idPrefix.toLowerCase() + 'Pct');
+  const statEl  = document.getElementById(idPrefix.toLowerCase() + 'Status');
+  priceEl.textContent = fmt(data.price);
+  priceEl.style.color = color;
+  pctEl.textContent   = fmtP(data.pct);
+  pctEl.className     = 'crisis-pct ' + pC(data.pct);
+  statEl.textContent  = label;
+  statEl.style.color  = color;
+}
+
+function evaluateAlertBanner(hyg, lqd, tlt, dxy, spy, vix) {
+  const banner   = document.getElementById('alertBanner');
+  const title    = document.getElementById('alertTitle');
+  const triggers = document.getElementById('alertTriggers');
+  const icon     = document.getElementById('alertIcon');
+
+  const redSignals   = [];
+  const orangeSignals = [];
+  const yellowSignals = [];
+
+  // VIX thresholds
+  if (vix) {
+    if (vix.price > 40) redSignals.push('VIX > 40 (' + vix.price.toFixed(1) + ') — EXTREME FEAR');
+    else if (vix.price > 30) orangeSignals.push('VIX > 30 (' + vix.price.toFixed(1) + ') — FEAR');
+    else if (vix.price > 25) yellowSignals.push('VIX > 25 (' + vix.price.toFixed(1) + ') — ELEVATED');
+  }
+  // HYG
+  if (hyg && hyg.pct < -2.0) redSignals.push('HYG -' + Math.abs(hyg.pct).toFixed(2) + '% — CREDIT CRISIS');
+  else if (hyg && hyg.pct < -1.0) orangeSignals.push('HYG -' + Math.abs(hyg.pct).toFixed(2) + '% — CREDIT STRESS');
+  // TLT + SPY both down
+  if (tlt && spy && tlt.pct < -0.5 && spy.pct < -0.5) redSignals.push('TLT + SPY BOTH DOWN — FORCED LIQUIDATION');
+  // DXY surge
+  if (dxy && dxy.pct > 1.0) redSignals.push('DOLLAR +' + dxy.pct.toFixed(2) + '% — EM STRESS SIGNAL');
+  else if (dxy && dxy.pct > 0.5) orangeSignals.push('DOLLAR +' + dxy.pct.toFixed(2) + '% — RISING');
+  // SPY big drop
+  if (spy && spy.pct < -3.0) redSignals.push('SPY ' + fmtP(spy.pct) + ' — MAJOR DISTRIBUTION');
+  else if (spy && spy.pct < -1.5) orangeSignals.push('SPY ' + fmtP(spy.pct) + ' — SELLING PRESSURE');
+  // HYG vs LQD spread
+  if (hyg && lqd && (hyg.pct - lqd.pct) < -1.5) redSignals.push('HYG/LQD SPREAD BLOWOUT — ACKMAN 2020 PATTERN');
+
+  if (redSignals.length > 0) {
+    banner.style.display = 'block';
+    banner.className = 'alert-banner red';
+    icon.textContent = '🚨';
+    title.textContent = 'RED ALERT — WE ARE DONE SIGNAL: ' + redSignals.length + ' CRITICAL TRIGGER' + (redSignals.length > 1 ? 'S' : '') + ' ACTIVE';
+    triggers.textContent = redSignals.join(' · ');
+  } else if (orangeSignals.length > 0) {
+    banner.style.display = 'block';
+    banner.className = 'alert-banner orange';
+    icon.textContent = '⚠️';
+    title.textContent = 'ORANGE ALERT — BUY PUTS NOW: ' + orangeSignals.length + ' WARNING TRIGGER' + (orangeSignals.length > 1 ? 'S' : '') + ' ACTIVE';
+    triggers.textContent = orangeSignals.join(' · ');
+  } else if (yellowSignals.length > 0) {
+    banner.style.display = 'block';
+    banner.className = 'alert-banner yellow';
+    icon.textContent = '👁️';
+    title.textContent = 'YELLOW ALERT — START WATCHING PUTS: ' + yellowSignals.join(' · ');
+    triggers.textContent = 'No immediate action — monitor closely';
+  } else {
+    banner.style.display = 'none';
+  }
 }
 
 setInterval(tick,1000);
