@@ -158,13 +158,23 @@ body{background:var(--bg);color:#c8dae8;font-family:var(--display);min-height:10
 <body>
 
 <!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="title">SPY Risk Dashboard</div>
+    <div class="subtitle">Composite Market Decline Indicator · 15min Delay · Not Financial Advice</div>
+  </div>
+  <div class="hdr-right">
+    <span class="clock" id="clock">--:--:--</span>
+    <span id="dateLine">—</span>
+    <div class="refresh-status"><span class="refresh-dot"></span><span id="refreshCountdown">Auto-refresh in 60s</span></div>
+  </div>
+</div>
 
 <!-- ALERT BANNER -->
 <div class="alert-banner" id="alertBanner">
   <div><span class="alert-icon" id="alertIcon">⚠️</span><strong id="alertTitle">—</strong></div>
   <div class="alert-triggers" id="alertTriggers">—</div>
 </div>
-
 
 <!-- CRISIS / EARLY WARNING INDICATORS -->
 <div class="section-label">▸ Crisis Early Warning Indicators</div>
@@ -200,18 +210,6 @@ body{background:var(--bg);color:#c8dae8;font-family:var(--display);min-height:10
     <div class="crisis-pct neutral" id="dxyPct">—</div>
     <div class="crisis-threshold">🔴 ALERT: UUP up &gt;1% while SPY drops<br>= Global dollar debt being called in<br>EM collapse → US equities 4–6wks later</div>
     <div class="crisis-status" id="dxyStatus">Loading...</div>
-  </div>
-</div>
-
-<div class="header">
-  <div>
-    <div class="title">SPY Risk Dashboard</div>
-    <div class="subtitle">Composite Market Decline Indicator · 15min Delay · Not Financial Advice</div>
-  </div>
-  <div class="hdr-right">
-    <span class="clock" id="clock">--:--:--</span>
-    <span id="dateLine">—</span>
-    <div class="refresh-status"><span class="refresh-dot"></span><span id="refreshCountdown">Auto-refresh in 60s</span></div>
   </div>
 </div>
 
